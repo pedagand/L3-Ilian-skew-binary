@@ -45,14 +45,11 @@ let generator_small_int =
 
 let generator_skew : skew QCheck.Gen.t =
  fun st ->
-  let n = generator_small_int st / 10 in
+  let n = generator_small_int st in
   let rec gen_list acc =
     if acc = 0 then [] else (W 1, generator_small_int st) :: gen_list (acc - 1)
   in
-  let first =
-    if n mod 2 = 0 then (W 1, generator_small_int st / 10)
-    else (W 2, generator_small_int st / 10)
-  in
+  let first = (W ((n mod 2) + 1), generator_small_int st) in
   first :: gen_list n
 
 let arbitrary_skew = QCheck.make ~print:pp_skew generator_skew
@@ -60,10 +57,6 @@ let arbitrary_skew = QCheck.make ~print:pp_skew generator_skew
 let test_inc_q =
   let open QCheck in
   Test.make ~count:100 ~name:"inc" arbitrary_skew (fun s ->
-      print_string ("s : " ^ pp_skew s);
-      print_newline ();
-      print_string ("inc s : " ^ pp_skew (inc s));
-      print_newline ();
       skew_to_int s + 1 = skew_to_int (inc s))
 
 let () =

@@ -19,13 +19,16 @@ let rec pp_skew (s : skew) =
   | (W w, n) :: rest ->
       pp_skew rest ^ " " ^ string_of_int w ^ ".." ^ string_of_int n ^ " "
 
-let minus_1 = function [] -> [] | (w, n) :: rest -> (w, n - 1) :: rest
-
 let inc : skew -> skew = function
   | [] -> (W 1, 0) :: []
-  | (W 2, n) :: rest -> (W 1, n + 1) :: minus_1 rest
   | (W w, n) :: [] ->
-      if n = 0 then (W 2, n) :: [] else [ (W 1, 0); (W w, n - 1) ]
+      if w = 2 then (W 1, n + 1) :: []
+      else if n = 0 then (W 2, n) :: []
+      else [ (W 1, 0); (W w, n - 1) ]
   | (W w1, n1) :: (W w2, n2) :: rest ->
-      if n1 = 0 then (W 2, 0) :: (W w2, n2) :: rest
-      else (W 1, 0) :: (W w1, n1 - 1) :: (W w2, n2) :: rest
+      if w1 = w2 then
+        if n1 = 0 then (W 2, 0) :: (W w2, n2) :: rest
+        else (W 1, 0) :: (W w1, n1 - 1) :: (W w2, n2) :: rest
+      else if n2 = 0 then (W 2, n1 + 1) :: rest
+      else (W 1, n1 + 1) :: (W w2, n2 - 1) :: rest
+(*w1 = w2 => w1 = w2 = 1, sinon w1 = 2, w2 = 1*)
