@@ -16,15 +16,16 @@ let skew_to_int s =
 let rec pp_skew (s : skew) =
   match s with
   | [] -> "0"
-  | (W w, n) :: rest -> pp_skew rest ^ " " ^ string_of_int w ^ ".." ^ string_of_int n ^ " "
+  | (W w, n) :: rest ->
+      pp_skew rest ^ " " ^ string_of_int w ^ ".." ^ string_of_int n ^ " "
 
 let inc : skew -> skew = function
   | [] -> (W 1, 0) :: []
-  | (W w, n) :: [] -> if w = 2 then (W 1, n + 1) :: [] else (W 2, n) :: []
+  | (W w, n) :: [] -> if w = 2 then (W 1, n + 1) :: [] else if n = 0 then (W 2, n) :: [] else (W 1, 0) :: (W w, n - 1) :: []
   | (W w1, n1) :: (W w2, n2) :: rest ->
       if w1 = w2 then
         if n1 = 0 then (W 2, 0) :: (W w2, n2) :: rest
-        else (W 1, 0) :: (W w1, n1) :: (W w2, n2) :: rest
-      else if n1 = 0 && n2 = 1 then (W (w2 + 1), n2) :: rest
-      else (W 1, 1) :: (W w2, n2 - 1) :: rest
+        else (W 1, 0) :: (W w1, n1 - 1) :: (W w2, n2) :: rest
+      else if n1 = 0 && n2 = 0 then (W (w2 + 1), 1) :: rest
+      else (W 1, 1) :: ((W w2, n2 - 1) :: rest)
 (*w1 = w2 implies that w1 = w2 = 1, w1 != w2 implies that w1 = 2 and w2 = 1*)
