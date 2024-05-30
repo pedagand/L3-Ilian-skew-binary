@@ -32,3 +32,12 @@ let inc : skew -> skew = function
       else if n2 = 0 then (W 2, n1 + 1) :: rest
       else (W 1, n1 + 1) :: (W w2, n2 - 1) :: rest
 (*w1 = w2 => w1 = w2 = 1, sinon w1 = 2, w2 = 1*)
+
+let dec : skew -> skew = function
+  | (W 2, 0) :: rest -> (W 1, 0) :: rest
+  | (W 1, 0) :: (w, n) :: rest -> (w, n + 1) :: rest
+  | (W 1, 0) :: [] -> []
+  | (W 2, n) :: rest -> (W 2, n - 1) :: (W 1, 0) :: rest
+  | (W 1, n) :: (w, n2) :: rest -> (W 2, n - 1) :: (w, n2 + 1) :: rest
+  | (W 1, n) :: [] -> (W 2, n - 1) :: []
+  | _ -> []

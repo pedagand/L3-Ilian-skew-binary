@@ -59,6 +59,17 @@ let test_inc_q =
   Test.make ~count:100 ~name:"inc" arbitrary_skew (fun s ->
       skew_to_int s + 1 = skew_to_int (inc s))
 
+let test_dec_q =
+  let open QCheck in
+  Test.make ~count:100 ~name:"dec" arbitrary_skew (fun s ->
+    print_string ("s : " ^ pp_skew s);
+    print_newline ();
+    print_string ("dec s : " ^ pp_skew (dec s));
+    print_newline ();
+
+
+      skew_to_int s - 1 = skew_to_int (dec s))
+
 let () =
   let open Alcotest in
   run "Skew"
@@ -72,4 +83,5 @@ let () =
         ] );
       ("inc", [ test_inc s1; test_inc s2; test_inc s3; test_inc s4 ]);
       ("inc (QCheck)", [ QCheck_alcotest.to_alcotest test_inc_q ]);
+      ("dec (QCheck)", [ QCheck_alcotest.to_alcotest test_dec_q ]);
     ]
