@@ -36,7 +36,7 @@ let test_skew_to_int_4 =
 let test_inc s =
   let result = skew_to_int (inc s) in
   let desired = skew_to_int s + 1 in
-  Alcotest.test_case (pp_skew s) `Quick (fun () ->
+  Alcotest.test_case (Format.asprintf "%a" pp_skew s) `Quick (fun () ->
       Alcotest.(check int) "same result" desired result)
 
 let generator_small_int =
@@ -47,12 +47,12 @@ let generator_skew : skew QCheck.Gen.t =
  fun st ->
   let n = generator_small_int st in
   let rec gen_list acc =
-    if acc = 0 then [] else (W 1, generator_small_int st) :: gen_list (acc - 1)
+    if acc = 0 then [] else (O, generator_small_int st) :: gen_list (acc - 1)
   in
-  let first = (W ((n mod 2) + 1), generator_small_int st) in
+  let first = if n mod 2 = 0 then (O, generator_small_int st) else (T, generator_small_int st) in
   first :: gen_list n
 
-let arbitrary_skew = QCheck.make ~print:pp_skew generator_skew
+let arbitrary_skew = QCheck.make ~print:(Format.asprintf "%a" pp_skew) generator_skew
 
 let test_inc_q =
   let open QCheck in
@@ -62,9 +62,9 @@ let test_inc_q =
 let test_dec_q =
   let open QCheck in
   Test.make ~count:100 ~name:"dec" arbitrary_skew (fun s ->
-    print_string ("s : " ^ pp_skew s);
+    print_string ("s : " ^ Format.asprintf "%a" pp_skew s);
     print_newline ();
-    print_string ("dec s : " ^ pp_skew (dec s));
+    print_string ("dec s : " ^ Format.asprintf "%a" pp_skew (dec s));
     print_newline ();
 
 

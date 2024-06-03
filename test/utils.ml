@@ -1,7 +1,7 @@
 open Numrep.Skew
 
-let only_one = List.init 50 (fun _ -> (W 1, 0))
-let s1 = [ (W 2, 0); (W 1, 3); (W 1, 0) ]
-let s2 = [ (W 1, 0); (W 1, 10) ]
-let s3 = (W 1, 0) :: []
-let s4 = (W 2, 0) :: []
+let only_one = List.init 50 (fun _ -> (O, 0))
+let s1 = [ (T, 0); (O, 3); (O, 0) ]
+let s2 = [ (O, 0); (O, 10) ]
+let s3 = (O, 0) :: []
+let s4 = (T, 0) :: []
