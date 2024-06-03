@@ -7,6 +7,31 @@ let test_skew_to_int_1 =
   Alcotest.test_case "[]" `Quick (fun () ->
       Alcotest.(check int) "same result" desired result)
 
+let test_is_canonical_1 =
+  let result = is_canonical [] in
+  Alcotest.test_case "[]" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true result)
+
+let test_is_canonical_2 =
+  let result = is_canonical s1 in
+  Alcotest.test_case "(T, 0) :: (O, 3) :: (O, 0) :: []" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true result)
+
+let test_is_canonical_3 =
+  let result = is_canonical s3 in
+  Alcotest.test_case "(O, 0) :: []" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true result)
+
+let test_is_canonical_4 =
+  let result = is_canonical [ (T, 1); (T, 1) ] in
+  Alcotest.test_case "(T, 1) :: (T, 1) :: []" `Quick (fun () ->
+      Alcotest.(check bool) "same result" false result)
+
+      let test_is_canonical_5 =
+        let result = is_canonical [ (O, 1); (T, 1) ] in
+        Alcotest.test_case "(O, 1) :: (T, 1) :: []" `Quick (fun () ->
+            Alcotest.(check bool) "same result" false result)
+
 let rec pow_2 n =
   if n = 0 then 1
   else if n mod 2 = 0 then
@@ -49,10 +74,14 @@ let generator_skew : skew QCheck.Gen.t =
   let rec gen_list acc =
     if acc = 0 then [] else (O, generator_small_int st) :: gen_list (acc - 1)
   in
-  let first = if n mod 2 = 0 then (O, generator_small_int st) else (T, generator_small_int st) in
+  let first =
+    if n mod 2 = 0 then (O, generator_small_int st)
+    else (T, generator_small_int st)
+  in
   first :: gen_list n
 
-let arbitrary_skew = QCheck.make ~print:(Format.asprintf "%a" pp_skew) generator_skew
+let arbitrary_skew =
+  QCheck.make ~print:(Format.asprintf "%a" pp_skew) generator_skew
 
 let test_inc_q =
   let open QCheck in
@@ -62,11 +91,10 @@ let test_inc_q =
 let test_dec_q =
   let open QCheck in
   Test.make ~count:100 ~name:"dec" arbitrary_skew (fun s ->
-    print_string ("s : " ^ Format.asprintf "%a" pp_skew s);
-    print_newline ();
-    print_string ("dec s : " ^ Format.asprintf "%a" pp_skew (dec s));
-    print_newline ();
-
+      print_string ("s : " ^ Format.asprintf "%a" pp_skew s);
+      print_newline ();
+      print_string ("dec s : " ^ Format.asprintf "%a" pp_skew (dec s));
+      print_newline ();
 
       skew_to_int s - 1 = skew_to_int (dec s))
 
@@ -74,6 +102,14 @@ let () =
   let open Alcotest in
   run "Skew"
     [
+      ( "is_canonical",
+        [
+          test_is_canonical_1;
+          test_is_canonical_2;
+          test_is_canonical_3;
+          test_is_canonical_4;
+          test_is_canonical_5;
+        ] );
       ( "skew_to_int",
         [
           test_skew_to_int_1;

@@ -17,15 +17,19 @@ let skew_to_int s =
 let rec pp_skew fmt (s : skew) =
   match s with
   | [] -> Format.fprintf fmt "•"
-  | (w, n) :: rest -> (pp_skew fmt rest); Format.fprintf fmt " %d..%d " (if w = O then 1 else 2) n
+  | (w, n) :: rest ->
+      pp_skew fmt rest;
+      Format.fprintf fmt " %d..%d " (if w = O then 1 else 2) n
 
+let is_canonical : skew -> bool = function
+  | (T, n) :: rest ->
+      n >= 0 && List.for_all (fun (w, n) -> w = O && n >= 0) rest
+  | l -> List.for_all (fun (w, n) -> w = O && n >= 0) l
 
 let inc : skew -> skew = function
   | [] -> (O, 0) :: []
   | (T, n) :: [] -> (O, n + 1) :: []
-  | (O, n) :: [] ->
-      if n = 0 then (T, n) :: []
-      else [ (O, 0); (O, n - 1) ]
+  | (O, n) :: [] -> if n = 0 then (T, n) :: [] else [ (O, 0); (O, n - 1) ]
   | (w1, n1) :: (w2, n2) :: rest ->
       if w1 = w2 then
         if n1 = 0 then (T, 0) :: (w2, n2) :: rest
