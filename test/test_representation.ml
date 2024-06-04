@@ -27,10 +27,10 @@ let test_is_canonical_4 =
   Alcotest.test_case "(T, 1) :: (T, 1) :: []" `Quick (fun () ->
       Alcotest.(check bool) "same result" false result)
 
-      let test_is_canonical_5 =
-        let result = is_canonical [ (O, 1); (T, 1) ] in
-        Alcotest.test_case "(O, 1) :: (T, 1) :: []" `Quick (fun () ->
-            Alcotest.(check bool) "same result" false result)
+let test_is_canonical_5 =
+  let result = is_canonical [ (O, 1); (T, 1) ] in
+  Alcotest.test_case "(O, 1) :: (T, 1) :: []" `Quick (fun () ->
+      Alcotest.(check bool) "same result" false result)
 
 let rec pow_2 n =
   if n = 0 then 1
