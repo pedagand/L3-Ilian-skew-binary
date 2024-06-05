@@ -85,6 +85,21 @@ let is_well_formed s =
       let acc = pow_2 (n + 2) in
       aux rest acc
 
+let equal s1 s2 =
+  let rec aux t1 t2 =
+    match (t1, t2) with
+    | Leaf x1, Leaf x2 -> x1 = x2
+    | Node (x1, t1, t2), Node (x2, t3, t4) -> x1 = x2 && aux t1 t3 && aux t2 t4
+    | _ -> false
+  in
+  List.for_all2
+    (fun d1 d2 ->
+      match (d1, d2) with
+      | One (n1, t1), One (n2, t2) -> n1 = n2 && aux t1 t2
+      | Two (n1, t1, t2), Two (n2, t3, t4) -> n1 = n2 && aux t1 t3 && aux t2 t4
+      | _ -> false)
+    s1 s2
+
 let inc : skew -> skew = function
   | [] -> (O, 0) :: []
   | (T, n) :: [] -> (O, n + 1) :: []

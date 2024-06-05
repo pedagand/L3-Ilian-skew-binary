@@ -77,6 +77,26 @@ let test_inc s =
   Alcotest.test_case (Format.asprintf "%a" pp_skew s) `Quick (fun () ->
       Alcotest.(check int) "same result" desired result)
 
+let test_cons1 =
+  let result = cons 1 skew_tree1 in
+  let desired : int skew_tree =
+    [ Two (0, tree1, Leaf 1); One (1, tree3); One (0, tree4) ]
+  in
+  Alcotest.test_case "[ One (0, tree1); One (1, tree3); One (0, tree4) ]" `Quick
+    (fun () -> Alcotest.(check bool) "same result" true (equal result desired))
+
+let test_cons2 =
+  let result = cons 1 skew_tree2 in
+  let desired : int skew_tree = [ Two (3, Node (1, tree3, tree3), tree4) ] in
+  Alcotest.test_case "[ Two (2, tree3, tree3); One (0, tree4) ]" `Quick
+    (fun () -> Alcotest.(check bool) "same result" true (equal result desired))
+
+let test_cons3 =
+  let result = cons 1 skew_tree2 in
+  let desired : int skew_tree = [ Two (4, Node (1, tree3, tree3), tree4) ] in
+  Alcotest.test_case "[ Two (2, tree3, tree3); One (0, tree4) ]" `Quick
+    (fun () -> Alcotest.(check bool) "same result" false (equal result desired))
+
 let generator_small_int =
   let open QCheck in
   Gen.small_int
@@ -140,4 +160,5 @@ let () =
       ("inc", [ test_inc s1; test_inc s2; test_inc s3; test_inc s4 ]);
       ("inc (QCheck)", [ QCheck_alcotest.to_alcotest test_inc_q ]);
       ("dec (QCheck)", [ QCheck_alcotest.to_alcotest test_dec_q ]);
+      ("cons", [ test_cons1; test_cons2; test_cons3 ]);
     ]
