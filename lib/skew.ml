@@ -7,7 +7,7 @@ type 'a array_digit =
   | Two of (int * 'a tree * 'a tree)
 
 (*int same as in skew*)
-type 'a skew_tree = 'a array_digit list
+type 'a skew_tree = (int * 'a array_digit) list
 
 let rec pow_2 n =
   if n = 0 then 1
@@ -46,11 +46,11 @@ let rec pp_skew fmt (s : skew) =
 (*affiche dans l'ordre naturel*)
 let rec pp_skew_tree fmt = function
   | [] -> Format.fprintf fmt "•"
-  | One (n, t) :: rest ->
+  | (_, One (n, t)) :: rest ->
       pp_skew_tree fmt rest;
       Format.fprintf fmt " (1 * card %d ) %s" (card t)
         (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
-  | Two (n, t1, t2) :: rest ->
+  | (_, Two (n, t1, t2)) :: rest ->
       pp_skew_tree fmt rest;
       Format.fprintf fmt " (2 * card %d * card %d) %s" (card t1) (card t2)
         (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
@@ -65,21 +65,22 @@ let is_well_formed s =
   let rec aux s acc =
     match s with
     | [] -> true
-    | One (n, t) :: rest ->
+    | (w, One (n, t)) :: rest ->
         print_string
           ("One (" ^ string_of_int n ^ " , card : "
           ^ string_of_int (card t)
           ^ " ) acc : " ^ string_of_int acc ^ " \n");
         let new_acc = 2 * acc in
-        if n = 0 then card t = acc - 1 && aux rest new_acc
-        else aux (One (n - 1, t) :: rest) new_acc
+        if n = 0 then w = card t && card t = acc - 1 && aux rest new_acc
+        else aux ((w, One (n - 1, t)) :: rest) new_acc
     | _ -> false
   in
   match s with
   | [] -> true
-  | One (_, _) :: _ -> aux s 2
-  | Two (n, t1, t2) :: rest ->
-      card t1 = card t2
+  | (_, One (_, _)) :: _ -> aux s 2
+  | (w, Two (n, t1, t2)) :: rest ->
+      w = card t1
+      && card t1 = card t2
       && card t1 = pow_2 (n + 1) - 1
       &&
       let acc = pow_2 (n + 2) in
@@ -95,8 +96,10 @@ let equal s1 s2 =
   List.for_all2
     (fun d1 d2 ->
       match (d1, d2) with
-      | One (n1, t1), One (n2, t2) -> n1 = n2 && aux t1 t2
-      | Two (n1, t1, t2), Two (n2, t3, t4) -> n1 = n2 && aux t1 t3 && aux t2 t4
+      | (w1, One (n1, t1)), (w2, One (n2, t2)) ->
+          w1 = w2 && n1 = n2 && aux t1 t2
+      | (w1, Two (n1, t1, t2)), (w2, Two (n2, t3, t4)) ->
+          w1 = w2 && n1 = n2 && aux t1 t3 && aux t2 t4
       | _ -> false)
     s1 s2
 
@@ -123,15 +126,36 @@ let dec : skew -> skew = function
 
 let cons x st =
   match st with
-  | [] -> One (0, Leaf x) :: []
-  | Two (n, t1, t2) :: [] -> One (n + 1, Node (x, t1, t2)) :: []
-  | One (n, t) :: [] ->
-      if n = 0 then Two (n, t, Leaf x) :: []
-      else [ One (0, Leaf x); One (n - 1, t) ]
-  | One (n1, t1) :: One (n2, t2) :: rest ->
-      if n1 = 0 then Two (0, t1, Leaf x) :: One (n2, t2) :: rest
-      else One (0, Leaf x) :: One (n1 - 1, t1) :: One (n2, t2) :: rest
-  | Two (n1, t1, t2) :: One (n2, t3) :: rest ->
-      if n2 = 0 then Two (n1 + 1, Node (x, t1, t2), t3) :: []
-      else One (n1 + 1, Node (x, t1, t2)) :: One (n2, t3) :: rest
+  | [] -> (1, One (0, Leaf x)) :: []
+  | (w, Two (n, t1, t2)) :: [] ->
+      ((2 * w) - 1, One (n + 1, Node (x, t1, t2))) :: []
+  | (w, One (n, t)) :: [] ->
+      if n = 0 then (w, Two (n, t, Leaf x)) :: []
+      else [ (1, One (0, Leaf x)); (w, One (n - 1, t)) ]
+  | (w1, One (n1, t1)) :: (w2, One (n2, t2)) :: rest ->
+      (*/!\ non commutatif*)
+      if n1 = 0 then (1, Two (0, t1, Leaf x)) :: (w2, One (n2, t2)) :: rest
+      else
+        (1, One (0, Leaf x))
+        :: (w1, One (n1 - 1, t1))
+        :: (w2, One (n2, t2))
+        :: rest
+  | (w1, Two (n1, t1, t2)) :: (w2, One (n2, t3)) :: rest ->
+      if n2 = 0 then (w2, Two (n1 + 1, t3, Node (x, t1, t2))) :: []
+      else
+        ((w1 * 2) - 1, One (n1 + 1, Node (x, t1, t2)))
+        :: (w2, One (n2, t3))
+        :: rest
   | _ -> [] (*nécessaire car on suppose Myers*)
+
+let head = function
+  | [] -> failwith "empty"
+  | (_, One (_, Leaf a)) :: _ -> a
+  | (_, One (_, Node (a, _, _))) :: _ -> a
+  | _ -> failwith "no solution for Two atm"
+
+let tail = function
+  | [] -> failwith "empty"
+  | (_, One (_, Leaf _)) :: rest -> rest
+  | (_, One (n, Node (_, t1, t2))) :: rest -> (card t2, Two (n, t1, t2)) :: rest
+  | _ -> failwith "no solution for Two atm"

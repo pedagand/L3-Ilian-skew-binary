@@ -80,20 +80,24 @@ let test_inc s =
 let test_cons1 =
   let result = cons 1 skew_tree1 in
   let desired : int skew_tree =
-    [ Two (0, tree1, Leaf 1); One (1, tree3); One (0, tree4) ]
+    [ (1, Two (0, tree1, Leaf 1)); (7, One (1, tree3)); (15, One (0, tree4)) ]
   in
   Alcotest.test_case "[ One (0, tree1); One (1, tree3); One (0, tree4) ]" `Quick
     (fun () -> Alcotest.(check bool) "same result" true (equal result desired))
 
 let test_cons2 =
   let result = cons 1 skew_tree2 in
-  let desired : int skew_tree = [ Two (3, Node (1, tree3, tree3), tree4) ] in
+  let desired : int skew_tree =
+    [ (15, Two (3, tree4, Node (1, tree3, tree3))) ]
+  in
   Alcotest.test_case "[ Two (2, tree3, tree3); One (0, tree4) ]" `Quick
     (fun () -> Alcotest.(check bool) "same result" true (equal result desired))
 
 let test_cons3 =
   let result = cons 1 skew_tree2 in
-  let desired : int skew_tree = [ Two (4, Node (1, tree3, tree3), tree4) ] in
+  let desired : int skew_tree =
+    [ (15, Two (4, Node (1, tree3, tree3), tree4)) ]
+  in
   Alcotest.test_case "[ Two (2, tree3, tree3); One (0, tree4) ]" `Quick
     (fun () -> Alcotest.(check bool) "same result" false (equal result desired))
 

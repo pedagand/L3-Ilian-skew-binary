@@ -9,7 +9,7 @@ type 'a array_digit =
   | Two of (int * 'a tree * 'a tree)
 
 (*int same as in skew*)
-type 'a skew_tree = 'a array_digit list
+type 'a skew_tree = (int * 'a array_digit) list
 
 val skew_to_int : skew -> int
 val pp_skew : Format.formatter -> skew -> unit
@@ -23,3 +23,5 @@ val inc : skew -> skew
 val dec : skew -> skew
 val cons : 'a -> 'a skew_tree -> 'a skew_tree
 val card : 'a tree -> int
+val head : 'a skew_tree -> 'a
+val tail : 'a skew_tree -> 'a skew_tree
