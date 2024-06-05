@@ -9,6 +9,13 @@ type 'a array_digit =
 (*int same as in skew*)
 type 'a skew_tree = 'a array_digit list
 
+let rec pow_2 n =
+  if n = 0 then 1
+  else if n mod 2 = 0 then
+    let y = pow_2 (n / 2) in
+    y * y
+  else 2 * pow_2 (n - 1)
+
 let skew_to_int s =
   let rec aux s acc indice =
     match s with
@@ -52,6 +59,31 @@ let is_canonical : skew -> bool = function
   | (T, n) :: rest ->
       n >= 0 && List.for_all (fun (w, n) -> w = O && n >= 0) rest
   | l -> List.for_all (fun (w, n) -> w = O && n >= 0) l
+
+(*check myers form and cardinal of each tree is correct*)
+let is_well_formed s =
+  let rec aux s acc =
+    match s with
+    | [] -> true
+    | One (n, t) :: rest ->
+        print_string
+          ("One (" ^ string_of_int n ^ " , card : "
+          ^ string_of_int (card t)
+          ^ " ) acc : " ^ string_of_int acc ^ " \n");
+        let new_acc = 2 * acc in
+        if n = 0 then card t = acc - 1 && aux rest new_acc
+        else aux (One (n - 1, t) :: rest) new_acc
+    | _ -> false
+  in
+  match s with
+  | [] -> true
+  | One (_, _) :: _ -> aux s 2
+  | Two (n, t1, t2) :: rest ->
+      card t1 = card t2
+      && card t1 = pow_2 (n + 1) - 1
+      &&
+      let acc = pow_2 (n + 2) in
+      aux rest acc
 
 let inc : skew -> skew = function
   | [] -> (O, 0) :: []
