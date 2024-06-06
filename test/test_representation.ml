@@ -135,6 +135,35 @@ let test_dec_q =
 
       skew_to_int s - 1 = skew_to_int (dec s))
 
+let test_head1 =
+  let result = head skew_tree1 in
+  let desired = 0 in
+  Alcotest.test_case
+    "[ (1, One (0, tree1)); (7, One (1, tree3)); (15, One (0, tree4)) ]" `Quick
+    (fun () -> Alcotest.(check int) "same result" result desired)
+
+let test_head2 =
+  let result = head skew_tree2 in
+  let desired = 2 in
+  Alcotest.test_case "[ (7, Two (2, tree3, tree3)); (15, One (0, tree4)) ]"
+    `Quick (fun () -> Alcotest.(check int) "same result" result desired)
+
+let test_tail1 =
+  let result = tail skew_tree1 in
+  let desired = [ (7, One (1, tree3)); (15, One (0, tree4)) ] in
+  Alcotest.test_case
+    "[ (1, One (0, tree1)); (7, One (1, tree3)); (15, One (0, tree4)) ]" `Quick
+    (fun () -> Alcotest.(check bool) "same result" true (equal result desired))
+
+let test_tail2 =
+  let result = tail skew_tree2 in
+  let desired =
+    [ (3, Two (1, tree2, tree2)); (7, One (0, tree3)); (15, One (0, tree4)) ]
+  in
+  Alcotest.test_case "[ (7, Two (2, tree3, tree3)); (15, One (0, tree4)) ]"
+    `Quick (fun () ->
+      Alcotest.(check bool) "same result" true (equal result desired))
+
 let () =
   let open Alcotest in
   run "Skew"
@@ -165,4 +194,6 @@ let () =
       ("inc (QCheck)", [ QCheck_alcotest.to_alcotest test_inc_q ]);
       ("dec (QCheck)", [ QCheck_alcotest.to_alcotest test_dec_q ]);
       ("cons", [ test_cons1; test_cons2; test_cons3 ]);
+      ("head", [ test_head1; test_head2 ]);
+      ("tail", [ test_tail1; test_tail2 ]);
     ]

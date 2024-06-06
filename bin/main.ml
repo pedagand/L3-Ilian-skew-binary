@@ -1,1 +1,1 @@
-let () = print_newline ()
+let () = print_int (15 / 2)

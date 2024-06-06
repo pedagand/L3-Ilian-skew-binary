@@ -13,9 +13,9 @@ let s2 = [ (O, 0); (O, 10) ]
 let s3 = (O, 0) :: []
 let s4 = (T, 0) :: []
 let tree1 = Leaf 0
-let tree2 = Node (0, tree1, tree1)
-let tree3 = Node (0, tree2, tree2)
-let tree4 = Node (0, tree3, tree3)
+let tree2 = Node (1, tree1, tree1)
+let tree3 = Node (2, tree2, tree2)
+let tree4 = Node (3, tree3, tree3)
 
 let skew_tree1 : int skew_tree =
   [ (1, One (0, tree1)); (7, One (1, tree3)); (15, One (0, tree4)) ]

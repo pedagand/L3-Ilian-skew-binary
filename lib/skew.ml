@@ -150,12 +150,17 @@ let cons x st =
 
 let head = function
   | [] -> failwith "empty"
-  | (_, One (_, Leaf a)) :: _ -> a
+  | (1, One (0, Leaf a)) :: _ -> a
   | (_, One (_, Node (a, _, _))) :: _ -> a
-  | _ -> failwith "no solution for Two atm"
+  | (1, Two (0, Leaf a, Leaf _)) :: _ -> a
+  | (_, Two (_, Node (a, _, _), Node _)) :: _ -> a
+  | _ -> failwith "incorrect form"
 
 let tail = function
   | [] -> failwith "empty"
-  | (_, One (_, Leaf _)) :: rest -> rest
-  | (_, One (n, Node (_, t1, t2))) :: rest -> (card t2, Two (n, t1, t2)) :: rest
-  | _ -> failwith "no solution for Two atm"
+  | (1, One (0, Leaf _)) :: rest -> rest
+  | (w, One (n, Node (_, t1, t2))) :: rest -> (w / 2, Two (n, t1, t2)) :: rest
+  | (1, Two (0, Leaf _, Leaf t2)) :: rest -> (1, One (0, Leaf t2)) :: rest
+  | (w, Two (n, Node (_, t1, t2), t3)) :: rest ->
+      (w / 2, Two (n - 1, t1, t2)) :: (w, One (0, t3)) :: rest
+  | _ -> failwith "incorrect form"
