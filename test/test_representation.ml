@@ -166,10 +166,22 @@ let test_tail2 =
 
 let test_lookup_tree =
   let rec aux i =
-    if i = 15 then true else lookup_tree 15 i tree_lookup = i && aux (i + 1)
+    if i = 15 then true else lookup_tree 15 i tree_lookup_test = i && aux (i + 1)
   in
   let result = aux 0 in
-  Alcotest.test_case "lookup tree" `Quick (fun () ->
+  Alcotest.test_case "lookup_tree" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true result)
+
+let test_lookup =
+  let rec aux i =
+    if i = 10 then true
+    else
+      (let desired = if i < 6 then i + 15 else i - 6 in
+       lookup i lookup_test = desired)
+      && aux (i + 1)
+  in
+  let result = aux 0 in
+  Alcotest.test_case "lookup_tree" `Quick (fun () ->
       Alcotest.(check bool) "same result" true result)
 
 let () =
@@ -205,4 +217,5 @@ let () =
       ("head", [ test_head1; test_head2 ]);
       ("tail", [ test_tail1; test_tail2 ]);
       ("lookup tree", [ test_lookup_tree ]);
+      ("lookup", [ test_lookup ]);
     ]
