@@ -164,6 +164,14 @@ let test_tail2 =
     `Quick (fun () ->
       Alcotest.(check bool) "same result" true (equal result desired))
 
+let test_lookup_tree =
+  let rec aux i =
+    if i = 15 then true else lookup_tree 15 i tree_lookup = i && aux (i + 1)
+  in
+  let result = aux 0 in
+  Alcotest.test_case "lookup tree" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true result)
+
 let () =
   let open Alcotest in
   run "Skew"
@@ -196,4 +204,5 @@ let () =
       ("cons", [ test_cons1; test_cons2; test_cons3 ]);
       ("head", [ test_head1; test_head2 ]);
       ("tail", [ test_tail1; test_tail2 ]);
+      ("lookup tree", [ test_lookup_tree ]);
     ]

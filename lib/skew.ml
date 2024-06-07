@@ -164,3 +164,22 @@ let tail = function
   | (w, Two (n, Node (_, t1, t2), t3)) :: rest ->
       (w / 2, Two (n - 1, t1, t2)) :: (w, One (0, t3)) :: rest
   | _ -> failwith "incorrect form"
+
+let rec lookup_tree w i t =
+  if i < 0 || i > w then failwith "i out of bounds"
+  else
+    match (w, i, t) with
+    | 1, 0, Leaf x -> x
+    | _, 0, Node (x, _, _) -> x
+    | w, i, Node (_, t1, t2) ->
+        if i <= w / 2 then lookup_tree (w / 2) (i - 1) t1
+        else lookup_tree (w / 2) (i - 1 - (w / 2)) t2
+    | _ -> failwith "incorrect form"
+
+let rec lookup i = function
+  | [] -> failwith "empty"
+  | (w, One (_, t)) :: ts ->
+      if i < w then lookup_tree w i t else lookup (i - w) ts
+  | (w, Two (_, t1, t2)) :: ts ->
+      if i < w then lookup_tree w i t1
+      else lookup (i - w) ((w, One (0, t2)) :: ts)
