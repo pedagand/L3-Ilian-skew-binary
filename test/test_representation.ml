@@ -128,11 +128,6 @@ let test_inc_q =
 let test_dec_q =
   let open QCheck in
   Test.make ~count:100 ~name:"dec" arbitrary_skew (fun s ->
-      print_string ("s : " ^ Format.asprintf "%a" pp_skew s);
-      print_newline ();
-      print_string ("dec s : " ^ Format.asprintf "%a" pp_skew (dec s));
-      print_newline ();
-
       skew_to_int s - 1 = skew_to_int (dec s))
 
 let test_head1 =
@@ -184,6 +179,66 @@ let test_lookup =
   Alcotest.test_case "lookup_tree" `Quick (fun () ->
       Alcotest.(check bool) "same result" true result)
 
+let test_update_tree =
+  let result = update_tree 100 15 0 tree_lookup_test in
+  let desired =
+    Node
+      ( 100,
+        Node (1, Node (2, Leaf 3, Leaf 4), Node (5, Leaf 6, Leaf 7)),
+        Node (8, Node (9, Leaf 10, Leaf 11), Node (12, Leaf 13, Leaf 14)) )
+  in
+  Alcotest.test_case "0" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true (equal_tree result desired))
+
+let test_update_tree2 =
+  let result = update_tree 100 15 6 tree_lookup_test in
+  let desired =
+    Node
+      ( 0,
+        Node (1, Node (2, Leaf 3, Leaf 4), Node (5, Leaf 100, Leaf 7)),
+        Node (8, Node (9, Leaf 10, Leaf 11), Node (12, Leaf 13, Leaf 14)) )
+  in
+  Alcotest.test_case "6" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true (equal_tree result desired))
+
+let test_update =
+  let result = update 100 0 lookup_test in
+  let desired =
+    [
+      (3, Two (1, Node (100, Leaf 16, Leaf 17), Node (18, Leaf 19, Leaf 20)));
+      (15, One (1, tree_lookup_test));
+    ]
+  in
+  Alcotest.test_case "0" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true (equal result desired))
+
+let test_update2 =
+  let result = update 100 4 lookup_test in
+  let desired =
+    [
+      (3, Two (1, Node (15, Leaf 16, Leaf 17), Node (18, Leaf 100, Leaf 20)));
+      (15, One (1, tree_lookup_test));
+    ]
+  in
+  Alcotest.test_case "4" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true (equal result desired))
+
+let test_update3 =
+  let result = update 100 6 lookup_test in
+  let desired =
+    [
+      (3, Two (1, Node (15, Leaf 16, Leaf 17), Node (18, Leaf 19, Leaf 20)));
+      (15, One (1, Node
+      ( 100,
+        Node (1, Node (2, Leaf 3, Leaf 4), Node (5, Leaf 6, Leaf 7)),
+        Node (8, Node (9, Leaf 10, Leaf 11), Node (12, Leaf 13, Leaf 14)) )
+      
+      ));
+    ]
+  in
+  Alcotest.test_case "4" `Quick (fun () ->
+      Alcotest.(check bool) "same result" true (equal result desired))
+
 let () =
   let open Alcotest in
   run "Skew"
@@ -218,4 +273,6 @@ let () =
       ("tail", [ test_tail1; test_tail2 ]);
       ("lookup tree", [ test_lookup_tree ]);
       ("lookup", [ test_lookup ]);
+      ("update_tree", [ test_update_tree; test_update_tree2 ]);
+      ("update", [ test_update; test_update2; test_update3 ]);
     ]

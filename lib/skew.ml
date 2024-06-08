@@ -176,6 +176,18 @@ let rec lookup_tree w i t =
         else lookup_tree (w / 2) (i - 1 - (w / 2)) t2
     | _ -> failwith "incorrect form"
 
+let rec update_tree y w i t =
+  print_string ("i : " ^ string_of_int i ^ " w : " ^ string_of_int w ^ " \n");
+  if i < 0 || i > w then failwith "i out of bounds"
+  else
+    match (w, i, t) with
+    | 1, 0, Leaf _ -> Leaf y
+    | _, 0, Node (_, t1, t2) -> Node (y, t1, t2)
+    | w, i, Node (x, t1, t2) ->
+        if i <= w / 2 then Node (x, update_tree y (w / 2) (i - 1) t1, t2)
+        else Node (x, t1, update_tree y (w / 2) (i - 1 - (w / 2)) t2)
+    | _ -> failwith "incorrect form"
+
 let rec lookup i = function
   | [] -> failwith "empty"
   | (w, One (_, t)) :: ts ->
@@ -183,3 +195,12 @@ let rec lookup i = function
   | (w, Two (_, t1, t2)) :: ts ->
       if i < w then lookup_tree w i t1
       else lookup (i - w) ((w, One (0, t2)) :: ts)
+
+let rec update y i = function
+  | [] -> failwith "empty"
+  | (w, One (n, t)) :: ts ->
+      if i < w then (w, One (n, update_tree y w i t)) :: ts else (w, One(n,t)) :: (update y (i - w) ts)      
+  | (w, Two (n, t1, t2)) :: ts ->
+      if i < w then (w, Two (n, update_tree y w i t1, t2)) :: ts
+      else if i < 2*w then (w, Two (n, t1, update_tree y w (i - w) t2)) :: ts
+      else (w, Two (n, t1, t2)) :: update y (i - (2 * w)) ts

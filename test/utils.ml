@@ -7,6 +7,13 @@ let rec pow_2 n =
     y * y
   else 2 * pow_2 (n - 1)
 
+let rec equal_tree t1 t2 =
+  match (t1, t2) with
+  | Leaf a, Leaf b -> a = b
+  | Node (x1, t1, t2), Node (x2, t3, t4) ->
+      x1 = x2 && equal_tree t1 t3 && equal_tree t2 t4
+  | _ -> false
+
 let only_one = List.init 50 (fun _ -> (O, 0))
 let s1 = [ (T, 0); (O, 3); (O, 0) ]
 let s2 = [ (O, 0); (O, 10) ]

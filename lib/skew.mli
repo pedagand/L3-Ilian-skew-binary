@@ -27,3 +27,5 @@ val head : 'a skew_tree -> 'a
 val tail : 'a skew_tree -> 'a skew_tree
 val lookup : int -> 'a skew_tree -> 'a
 val lookup_tree : int -> int -> 'a tree -> 'a (*weight, indice, tree*)
+val update : 'a -> int -> 'a skew_tree -> 'a skew_tree
+val update_tree : 'a -> int -> int -> 'a tree -> 'a tree
