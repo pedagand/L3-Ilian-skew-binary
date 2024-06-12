@@ -31,6 +31,20 @@ let skew_to_int s =
   in
   aux s 1 2
 
+let skew_from_int n =
+  let rec smallest_pow k pow n =
+    if pow - 1 = n || (2 * pow) - 1 > n then (k, pow - 1)
+    else smallest_pow (k + 1) (2 * pow) n
+  in
+  let rec aux n =
+    if n = 0 then []
+    else
+      let k, pow = smallest_pow 0 2 n in
+      let head, hd = if n = 2 * pow then (T, 2) else (O, 1) in
+      (head, k) :: aux (n - (hd * pow))
+  in
+  List.rev (aux n)
+
 let rec card = function
   | Leaf _ -> 1
   | Node (_, t1, t2) -> 1 + card t1 + card t2
@@ -203,3 +217,20 @@ let rec update y i = function
       if i < w then (w, Two (n, update_tree y w i t1, t2)) :: ts
       else if i < 2 * w then (w, Two (n, t1, update_tree y w (i - w) t2)) :: ts
       else (w, Two (n, t1, t2)) :: update y (i - (2 * w)) ts
+
+let from_list list =
+  let rec aux res list =
+    match list with [] -> res | a :: rest -> aux (cons a res) rest
+  in
+  aux [] list
+
+let rec to_list : 'a skew_tree -> 'a list =
+  let rec to_list_tree = function
+    | Leaf a -> [ a ]
+    | Node (a, t1, t2) -> to_list_tree t1 @ to_list_tree t2 @ [ a ]
+  in
+  function
+  | [] -> []
+  | (_, One (_, t)) :: rest -> to_list rest @ to_list_tree t
+  | (_, Two (_, t1, t2)) :: rest ->
+      to_list rest @ to_list_tree t1 @ to_list_tree t2

@@ -14,12 +14,11 @@ type 'a skew_tree = (int * 'a array_digit) list
 (*[@@deriving show, eq]*)
 
 val skew_to_int : skew -> int
+val skew_from_int : int -> (digit * int) list
 val pp_skew : Format.formatter -> skew -> unit
 val pp_skew_tree : Format.formatter -> 'a skew_tree -> unit
 val is_canonical : skew -> bool
 val is_well_formed : 'a skew_tree -> bool
-
-(*val equal : 'a tree -> 'a tree -> bool*)
 val equal_skew_tree : 'a skew_tree -> 'a skew_tree -> bool
 val inc : skew -> skew
 val dec : skew -> skew
@@ -31,3 +30,5 @@ val lookup : int -> 'a skew_tree -> 'a
 val lookup_tree : int -> int -> 'a tree -> 'a (*weight, indice, tree*)
 val update : 'a -> int -> 'a skew_tree -> 'a skew_tree
 val update_tree : 'a -> int -> int -> 'a tree -> 'a tree
+val from_list : 'a list -> 'a skew_tree
+val to_list : 'a skew_tree -> 'a list

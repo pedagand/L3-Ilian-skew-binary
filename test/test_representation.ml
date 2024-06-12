@@ -62,6 +62,16 @@ let test_lookup =
   Alcotest.test_case "lookup_tree" `Quick (fun () ->
       Alcotest.(check bool) "same result" true result)
 
+let test_bijective_from_to_list =
+  let open QCheck in
+  Test.make ~count:100 ~name:"bijective from_list to_list" (list int) (fun l ->
+      to_list (from_list l) = l)
+
+let test_bijective_from_to_skew =
+  let open QCheck in
+  Test.make ~count:100 ~name:"bijective skew_from_int skew_to_int" small_int
+    (fun l -> skew_to_int (skew_from_int l) = l)
+
 let () =
   let open Alcotest in
   run "Skew"
@@ -232,4 +242,8 @@ let () =
               true,
               "6" );
           ] );
+      ( "bijective from_list to_list (QCheck)",
+        [ QCheck_alcotest.to_alcotest test_bijective_from_to_list ] );
+      ( "bijective skew_from_int skew_to_int (QCheck)",
+        [ QCheck_alcotest.to_alcotest test_bijective_from_to_skew ] );
     ]
