@@ -36,6 +36,7 @@ let skew_from_int n =
     if pow - 1 = n || (2 * pow) - 1 > n then (k, pow - 1)
     else smallest_pow (k + 1) (2 * pow) n
   in
+  (*return skew with int : distance to the start*)
   let rec aux n =
     if n = 0 then []
     else
@@ -43,7 +44,15 @@ let skew_from_int n =
       let head, hd = if n = 2 * pow then (T, 2) else (O, 1) in
       (head, k) :: aux (n - (hd * pow))
   in
-  List.rev (aux n)
+  (*takes skew with int : distance to the start and makes it skew with int : distance to the previous*)
+  let rec compose (a, n) l =
+    match l with
+    | [] -> (a, n) :: []
+    | (b, m) :: [] -> [ (a, n - m - 1); (b, m) ]
+    | (O, m) :: rest -> (a, n - m - 1) :: compose (O, m) rest
+    | _ -> assert false
+  in
+  match aux n with [] -> [] | a :: rest -> List.rev (compose a rest)
 
 let rec card = function
   | Leaf _ -> 1
