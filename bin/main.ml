@@ -1,17 +1,16 @@
-open Numrep.Skew
+(*open Numrep.Skew
 
-let () =
-  let tree_lookup_test =
-    Node
-      ( 0,
-        Node (1, Node (2, Leaf 3, Leaf 4), Node (5, Leaf 6, Leaf 7)),
-        Node (8, Node (9, Leaf 10, Leaf 11), Node (12, Leaf 13, Leaf 14)) )
-  in
+  let () =
+  let tree1 = Leaf 0 in
+  let tree2 = Node (1, tree1, tree1) in
+  let tree3 = Node (2, tree2, tree2) in
+  let tree4 = Node (3, tree3, tree3) in
 
-  let lookup_test =
-    [
-      (3, Two (1, Node (15, Leaf 16, Leaf 17), Node (18, Leaf 19, Leaf 20)));
-      (15, One (1, tree_lookup_test));
-    ]
+  let skew_tree1 : int skew_tree =
+    [ (1, One (0, tree1)); (7, One (1, tree3)); (15, One (0, tree4)) ]
   in
-  print_int (lookup 4 lookup_test)
+  let skew_tree2 : int skew_tree =
+    [ (7, Two (2, tree3, tree3)); (15, One (0, tree4)) ]
+  in
+  let eq1 = equal_skew_tree (=) skew_tree1 skew_tree2 in
+  Printf.printf "tree1 and tree2 are equal: %b\n" eq1;*)

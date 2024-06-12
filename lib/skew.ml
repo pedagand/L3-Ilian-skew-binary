@@ -1,13 +1,15 @@
 type digit = O | T
 type skew = (digit * int) list
+
 type 'a tree = Leaf of 'a | Node of 'a * 'a tree * 'a tree
+[@@deriving show, eq]
 
 type 'a array_digit =
   | One of (int * 'a tree)
   | Two of (int * 'a tree * 'a tree)
 
 (*int same as in skew*)
-type 'a skew_tree = (int * 'a array_digit) list
+type 'a skew_tree = (int * 'a array_digit) list [@@deriving show, eq]
 
 let rec pow_2 n =
   if n = 0 then 1
@@ -86,7 +88,7 @@ let is_well_formed s =
       let acc = pow_2 (n + 2) in
       aux rest acc
 
-let equal s1 s2 =
+let equal_skew_tree s1 s2 =
   let rec aux t1 t2 =
     match (t1, t2) with
     | Leaf x1, Leaf x2 -> x1 = x2
@@ -107,16 +109,14 @@ let inc : skew -> skew = function
   | [] -> (O, 0) :: []
   | (T, n) :: [] -> (O, n + 1) :: []
   | (O, n) :: [] -> if n = 0 then (T, n) :: [] else [ (O, 0); (O, n - 1) ]
-  | (w1, n1) :: (w2, n2) :: rest ->
-      if w1 = w2 then
-        if n1 = 0 then (T, 0) :: (w2, n2) :: rest
-        else (O, 0) :: (w1, n1 - 1) :: (w2, n2) :: rest
-      else if n2 = 0 then (T, n1 + 1) :: rest
-      else (O, n1 + 1) :: (w2, n2 - 1) :: rest
-(*w1 = w2 => w1 = w2 = 1, sinon w1 = 2, w2 = 1*)
+  | (O, 0) :: (O, n2) :: rest -> (T, 0) :: (O, n2) :: rest
+  | (O, n1) :: (O, n2) :: rest -> (O, 0) :: (O, n1 - 1) :: (O, n2) :: rest
+  | (T, n1) :: (O, 0) :: rest -> (T, n1 + 1) :: rest
+  | (T, n1) :: (O, n2) :: rest -> (O, n1 + 1) :: (O, n2 - 1) :: rest
+  | _ -> assert false
 
 let dec : skew -> skew = function
-  | [] -> failwith "underflow"
+  | [] -> raise (Failure "dec")
   | (T, 0) :: rest -> (O, 0) :: rest
   | (O, 0) :: (w, n) :: rest -> (w, n + 1) :: rest
   | (O, 0) :: [] -> []
@@ -129,44 +129,42 @@ let cons x st =
   | [] -> (1, One (0, Leaf x)) :: []
   | (w, Two (n, t1, t2)) :: [] ->
       ((2 * w) - 1, One (n + 1, Node (x, t1, t2))) :: []
-  | (w, One (n, t)) :: [] ->
-      if n = 0 then (w, Two (n, t, Leaf x)) :: []
-      else [ (1, One (0, Leaf x)); (w, One (n - 1, t)) ]
+  | (w, One (0, t)) :: [] -> (w, Two (0, t, Leaf x)) :: []
+  | (w, One (n, t)) :: [] -> [ (1, One (0, Leaf x)); (w, One (n - 1, t)) ]
+  | (_, One (0, t1)) :: (w2, One (n2, t2)) :: rest ->
+      (1, Two (0, t1, Leaf x)) :: (w2, One (n2, t2)) :: rest
   | (w1, One (n1, t1)) :: (w2, One (n2, t2)) :: rest ->
-      (*/!\ non commutatif*)
-      if n1 = 0 then (1, Two (0, t1, Leaf x)) :: (w2, One (n2, t2)) :: rest
-      else
-        (1, One (0, Leaf x))
-        :: (w1, One (n1 - 1, t1))
-        :: (w2, One (n2, t2))
-        :: rest
+      (1, One (0, Leaf x))
+      :: (w1, One (n1 - 1, t1))
+      :: (w2, One (n2, t2))
+      :: rest
+  | (_, Two (n1, t1, t2)) :: (w2, One (0, t3)) :: rest ->
+      (w2, Two (n1 + 1, t3, Node (x, t1, t2))) :: rest
   | (w1, Two (n1, t1, t2)) :: (w2, One (n2, t3)) :: rest ->
-      if n2 = 0 then (w2, Two (n1 + 1, t3, Node (x, t1, t2))) :: []
-      else
-        ((w1 * 2) - 1, One (n1 + 1, Node (x, t1, t2)))
-        :: (w2, One (n2, t3))
-        :: rest
-  | _ -> [] (*nécessaire car on suppose Myers*)
+      ((w1 * 2) - 1, One (n1 + 1, Node (x, t1, t2)))
+      :: (w2, One (n2, t3))
+      :: rest
+  | _ -> assert false
 
 let head = function
-  | [] -> failwith "empty"
+  | [] -> raise (Failure "head")
   | (1, One (0, Leaf a)) :: _ -> a
   | (_, One (_, Node (a, _, _))) :: _ -> a
   | (1, Two (0, Leaf a, Leaf _)) :: _ -> a
   | (_, Two (_, Node (a, _, _), Node _)) :: _ -> a
-  | _ -> failwith "incorrect form"
+  | _ -> assert false
 
 let tail = function
-  | [] -> failwith "empty"
+  | [] -> raise (Failure "tail")
   | (1, One (0, Leaf _)) :: rest -> rest
   | (w, One (n, Node (_, t1, t2))) :: rest -> (w / 2, Two (n, t1, t2)) :: rest
   | (1, Two (0, Leaf _, Leaf t2)) :: rest -> (1, One (0, Leaf t2)) :: rest
   | (w, Two (n, Node (_, t1, t2), t3)) :: rest ->
       (w / 2, Two (n - 1, t1, t2)) :: (w, One (0, t3)) :: rest
-  | _ -> failwith "incorrect form"
+  | _ -> assert false
 
 let rec lookup_tree w i t =
-  if i < 0 || i > w then failwith "i out of bounds"
+  if i < 0 || i > w then raise (Failure "lookup_tree")
   else
     match (w, i, t) with
     | 1, 0, Leaf x -> x
@@ -174,11 +172,11 @@ let rec lookup_tree w i t =
     | w, i, Node (_, t1, t2) ->
         if i <= w / 2 then lookup_tree (w / 2) (i - 1) t1
         else lookup_tree (w / 2) (i - 1 - (w / 2)) t2
-    | _ -> failwith "incorrect form"
+    | _ -> assert false
 
 let rec update_tree y w i t =
   print_string ("i : " ^ string_of_int i ^ " w : " ^ string_of_int w ^ " \n");
-  if i < 0 || i > w then failwith "i out of bounds"
+  if i < 0 || i > w then raise (Failure "update_tree")
   else
     match (w, i, t) with
     | 1, 0, Leaf _ -> Leaf y
@@ -186,10 +184,10 @@ let rec update_tree y w i t =
     | w, i, Node (x, t1, t2) ->
         if i <= w / 2 then Node (x, update_tree y (w / 2) (i - 1) t1, t2)
         else Node (x, t1, update_tree y (w / 2) (i - 1 - (w / 2)) t2)
-    | _ -> failwith "incorrect form"
+    | _ -> assert false
 
 let rec lookup i = function
-  | [] -> failwith "empty"
+  | [] -> raise (Failure "lookup")
   | (w, One (_, t)) :: ts ->
       if i < w then lookup_tree w i t else lookup (i - w) ts
   | (w, Two (_, t1, t2)) :: ts ->
@@ -197,10 +195,11 @@ let rec lookup i = function
       else lookup (i - w) ((w, One (0, t2)) :: ts)
 
 let rec update y i = function
-  | [] -> failwith "empty"
+  | [] -> raise (Failure "update")
   | (w, One (n, t)) :: ts ->
-      if i < w then (w, One (n, update_tree y w i t)) :: ts else (w, One(n,t)) :: (update y (i - w) ts)      
+      if i < w then (w, One (n, update_tree y w i t)) :: ts
+      else (w, One (n, t)) :: update y (i - w) ts
   | (w, Two (n, t1, t2)) :: ts ->
       if i < w then (w, Two (n, update_tree y w i t1, t2)) :: ts
-      else if i < 2*w then (w, Two (n, t1, update_tree y w (i - w) t2)) :: ts
+      else if i < 2 * w then (w, Two (n, t1, update_tree y w (i - w) t2)) :: ts
       else (w, Two (n, t1, t2)) :: update y (i - (2 * w)) ts

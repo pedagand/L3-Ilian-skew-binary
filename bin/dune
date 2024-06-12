@@ -1,4 +1,6 @@
 (executable
  (public_name numrep)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq))
  (name main)
  (libraries numrep))
