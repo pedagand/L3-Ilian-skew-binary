@@ -1,12 +1,10 @@
 open Numrep.Skew
 
 let () =
-  let rec p n =
-    if n = 100 then ""
-    else
-      string_of_int n ^ " : "
-      ^ Format.asprintf "%a" pp_skew (skew_from_int n)
-      ^ "\n"
-      ^ p (n + 1)
+  let rec generator_tree x p =
+    if p = 1 then Leaf x
+    else Node (x, generator_tree x (p / 2), generator_tree x (p / 2))
   in
-  print_string (p 0)
+  let n = 15 in
+  let t = generator_tree 1 n in
+  pp_card_tree Format.std_formatter (card t, t)

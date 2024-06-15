@@ -1,5 +1,6 @@
 open Numrep.Skew
 open Utils
+open QCheck
 
 let test ((arg, expect, str) : 'a * 'b * string) (f : 'a -> 'b)
     (c : 'b Alcotest.testable) : unit Alcotest.test_case =
@@ -12,35 +13,6 @@ let test_2 ((arg, desired, expect, str) : 'a * 'b * bool * string)
   let result = f arg in
   Alcotest.test_case str `Quick (fun () ->
       Alcotest.(check bool) "same result" expect (eq desired result))
-
-let generator_small_int =
-  let open QCheck in
-  Gen.small_int
-
-let generator_skew : skew QCheck.Gen.t =
- fun st ->
-  let n = generator_small_int st in
-  let rec gen_list acc =
-    if acc = 0 then [] else (O, generator_small_int st) :: gen_list (acc - 1)
-  in
-  let first =
-    if n mod 2 = 0 then (O, generator_small_int st)
-    else (T, generator_small_int st)
-  in
-  first :: gen_list n
-
-let arbitrary_skew =
-  QCheck.make ~print:(Format.asprintf "%a" pp_skew) generator_skew
-
-let test_inc_q =
-  let open QCheck in
-  Test.make ~count:100 ~name:"inc" arbitrary_skew (fun s ->
-      skew_to_int s + 1 = skew_to_int (inc s))
-
-let test_dec_q =
-  let open QCheck in
-  Test.make ~count:100 ~name:"dec" arbitrary_skew (fun s ->
-      skew_to_int s - 1 = skew_to_int (dec s))
 
 let test_lookup_tree =
   let rec aux i =
@@ -62,15 +34,13 @@ let test_lookup =
   Alcotest.test_case "lookup_tree" `Quick (fun () ->
       Alcotest.(check bool) "same result" true result)
 
+let test_qcheck n name arbitrary_type f =
+  Test.make ~count:n ~name arbitrary_type f
+
 let test_bijective_from_to_list =
   let open QCheck in
   Test.make ~count:100 ~name:"bijective from_list to_list" (list int) (fun l ->
       to_list (from_list l) = l)
-
-let test_bijective_from_to_skew =
-  let open QCheck in
-  Test.make ~count:100 ~name:"bijective skew_from_int skew_to_int" small_int
-    (fun l -> skew_to_int (skew_from_int l) = l)
 
 let () =
   let open Alcotest in
@@ -100,6 +70,7 @@ let () =
             ( incorrect_cardinal,
               false,
               "[ One (1, tree1); One (1, tree3); Two (0, tree4, tree4) ]" );
+            (lookup_test, true, "lookup_test");
           ] );
       ( "skew_to_int",
         List.map
@@ -116,8 +87,6 @@ let () =
           (List.map
              (fun s -> (s, skew_to_int s + 1, Format.asprintf "%a" pp_skew s))
              [ s1; s2; s3; s4 ]) );
-      ("inc (QCheck)", [ QCheck_alcotest.to_alcotest test_inc_q ]);
-      ("dec (QCheck)", [ QCheck_alcotest.to_alcotest test_dec_q ]);
       ( "cons",
         List.map
           (fun a -> test_2 a (cons 1) equal_skew_tree)
@@ -242,8 +211,36 @@ let () =
               true,
               "6" );
           ] );
-      ( "bijective from_list to_list (QCheck)",
+      ( "QCheck : inc",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "inc" arbitrary_skew (fun s ->
+                 skew_to_int s + 1 = skew_to_int (inc s)));
+        ] );
+      ( "QCheck : dec",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "dec" arbitrary_skew (fun s ->
+                 skew_to_int s - 1 = skew_to_int (dec s)));
+        ] );
+      ( "QCheck : bijection skew_from_int skew_to_int",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "bijection skew_from_int skew_to_int"
+               QCheck.small_int (fun n -> skew_to_int (skew_from_int n) = n));
+        ] );
+      ( "QCheck : skew_from_int returns canonical skew",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "skew_from_int returns canonical skew"
+               QCheck.small_int (fun n -> is_canonical (skew_from_int n)));
+        ] );
+      ( "QCheck : bijection from_list to_list",
         [ QCheck_alcotest.to_alcotest test_bijective_from_to_list ] );
-      ( "bijective skew_from_int skew_to_int (QCheck)",
-        [ QCheck_alcotest.to_alcotest test_bijective_from_to_skew ] );
+      ( "QCheck : arbitrary_tree well_formed",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "arbitrary_tree_well_formed" arbitrary_skew_tree
+               (fun s -> is_well_formed s));
+        ] );
     ]

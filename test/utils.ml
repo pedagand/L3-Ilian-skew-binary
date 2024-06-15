@@ -1,4 +1,5 @@
 open Numrep.Skew
+open QCheck
 
 let rec pow_2 n =
   if n = 0 then 1
@@ -47,3 +48,48 @@ let lookup_test =
     (3, Two (1, Node (15, Leaf 16, Leaf 17), Node (18, Leaf 19, Leaf 20)));
     (15, One (1, tree_lookup_test));
   ]
+
+let generator_small_int =
+  let open QCheck in
+  Gen.small_int
+
+let generator_skew : skew Gen.t =
+ fun st ->
+  let n = generator_small_int st + 1 in
+  skew_from_int n
+
+let rec generator_tree gen_a p st =
+  if p = 1 then Leaf (Gen.generate1 ~rand:st gen_a)
+  else
+    Node
+      ( Gen.generate1 ~rand:st gen_a,
+        generator_tree gen_a (p / 2) st,
+        generator_tree gen_a (p / 2) st )
+
+let upgrade s gen_a st =
+  let rec aux s gen_a st acc =
+    match s with
+    | [] -> []
+    | (O, n) :: rest ->
+        let p = pow_2 (n + acc + 1) - 1 in
+        (p, One (n, generator_tree gen_a p st))
+        :: aux rest gen_a st (acc + n + 1)
+    | (T, n) :: rest ->
+        let p = pow_2 (n + acc + 1) - 1 in
+        (p, Two (n, generator_tree gen_a p st, generator_tree gen_a p st))
+        :: aux rest gen_a st (acc + n + 1)
+  in
+  aux s gen_a st 0
+
+let generator_skew_tree gen_a : 'a skew_tree Gen.t =
+ fun st ->
+  let s = generator_skew st in
+  upgrade s gen_a st
+
+let arbitrary_skew_tree =
+  QCheck.make
+    ~print:(Format.asprintf "%a" pp_skew_tree)
+    (generator_skew_tree Gen.int)
+
+let arbitrary_skew =
+  QCheck.make ~print:(Format.asprintf "%a" pp_skew) generator_skew

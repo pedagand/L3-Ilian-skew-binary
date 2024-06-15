@@ -18,6 +18,37 @@ let rec pow_2 n =
     y * y
   else 2 * pow_2 (n - 1)
 
+let rec card = function
+  | Leaf _ -> 1
+  | Node (_, t1, t2) -> 1 + card t1 + card t2
+
+let is_canonical : skew -> bool = function
+  | (T, n) :: rest ->
+      n >= 0 && List.for_all (fun (w, n) -> w = O && n >= 0) rest
+  | l -> List.for_all (fun (w, n) -> w = O && n >= 0) l
+
+(*check myers form and cardinal of each tree is correct*)
+let is_well_formed s =
+  let rec aux s acc =
+    match s with
+    | [] -> true
+    | (w, One (n, t)) :: rest ->
+        let new_acc = 2 * acc in
+        if n = 0 then w = card t && card t = acc - 1 && aux rest new_acc
+        else aux ((w, One (n - 1, t)) :: rest) new_acc
+    | _ -> false
+  in
+  match s with
+  | [] -> true
+  | (_, One (_, _)) :: _ -> aux s 2
+  | (w, Two (n, t1, t2)) :: rest ->
+      w = card t1
+      && card t1 = card t2
+      && card t1 = pow_2 (n + 1) - 1
+      &&
+      let acc = pow_2 (n + 2) in
+      aux rest acc
+
 let skew_to_int s =
   let rec aux s acc indice =
     match s with
@@ -29,6 +60,7 @@ let skew_to_int s =
         if n = 0 then (w * acc) + aux rest new_acc new_indice
         else aux ((d, n - 1) :: rest) new_acc new_indice
   in
+  assert (is_canonical s);
   aux s 1 2
 
 let skew_from_int n =
@@ -54,12 +86,18 @@ let skew_from_int n =
   in
   match aux n with [] -> [] | a :: rest -> List.rev (compose a rest)
 
-let rec card = function
-  | Leaf _ -> 1
-  | Node (_, t1, t2) -> 1 + card t1 + card t2
+let pp_card_tree fmt (n, t) =
+  let rec pp_int_tree fmt t =
+    match t with
+    | Leaf _ -> Format.fprintf fmt "Leaf 'a"
+    | Node (_, t1, t2) ->
+        Format.fprintf fmt "Node ('a, %a, %a)" pp_int_tree t1 pp_int_tree t2
+  in
+  Format.fprintf fmt "card : %d | %a" n pp_int_tree t
 
 (*affiche dans l'ordre naturel*)
 let rec pp_skew fmt (s : skew) =
+  assert (is_canonical s);
   match s with
   | [] -> Format.fprintf fmt "•"
   | (w, n) :: rest ->
@@ -69,47 +107,21 @@ let rec pp_skew fmt (s : skew) =
         (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
 
 (*affiche dans l'ordre naturel*)
-let rec pp_skew_tree fmt = function
-  | [] -> Format.fprintf fmt "•"
-  | (_, One (n, t)) :: rest ->
-      pp_skew_tree fmt rest;
-      Format.fprintf fmt " (1 * card %d ) %s" (card t)
-        (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
-  | (_, Two (n, t1, t2)) :: rest ->
-      pp_skew_tree fmt rest;
-      Format.fprintf fmt " (2 * card %d * card %d) %s" (card t1) (card t2)
-        (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
-
-let is_canonical : skew -> bool = function
-  | (T, n) :: rest ->
-      n >= 0 && List.for_all (fun (w, n) -> w = O && n >= 0) rest
-  | l -> List.for_all (fun (w, n) -> w = O && n >= 0) l
-
-(*check myers form and cardinal of each tree is correct*)
-let is_well_formed s =
-  let rec aux s acc =
-    match s with
-    | [] -> true
-    | (w, One (n, t)) :: rest ->
-        print_string
-          ("One (" ^ string_of_int n ^ " , card : "
-          ^ string_of_int (card t)
-          ^ " ) acc : " ^ string_of_int acc ^ " \n");
-        let new_acc = 2 * acc in
-        if n = 0 then w = card t && card t = acc - 1 && aux rest new_acc
-        else aux ((w, One (n - 1, t)) :: rest) new_acc
-    | _ -> false
+let pp_skew_tree fmt st =
+  let rec aux fmt st =
+    match st with
+    | [] -> Format.fprintf fmt "•"
+    | (_, One (n, t)) :: rest ->
+        aux fmt rest;
+        Format.fprintf fmt " (1 * card %d ) %s" (card t)
+          (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
+    | (_, Two (n, t1, t2)) :: rest ->
+        aux fmt rest;
+        Format.fprintf fmt " (2 * card %d * card %d) %s" (card t1) (card t2)
+          (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
   in
-  match s with
-  | [] -> true
-  | (_, One (_, _)) :: _ -> aux s 2
-  | (w, Two (n, t1, t2)) :: rest ->
-      w = card t1
-      && card t1 = card t2
-      && card t1 = pow_2 (n + 1) - 1
-      &&
-      let acc = pow_2 (n + 2) in
-      aux rest acc
+  assert (is_well_formed st);
+  aux fmt st
 
 let equal_skew_tree s1 s2 =
   let rec aux t1 t2 =
@@ -128,7 +140,9 @@ let equal_skew_tree s1 s2 =
       | _ -> false)
     s1 s2
 
-let inc : skew -> skew = function
+let inc s =
+  assert (is_canonical s);
+  match s with
   | [] -> (O, 0) :: []
   | (T, n) :: [] -> (O, n + 1) :: []
   | (O, n) :: [] -> if n = 0 then (T, n) :: [] else [ (O, 0); (O, n - 1) ]
@@ -138,7 +152,9 @@ let inc : skew -> skew = function
   | (T, n1) :: (O, n2) :: rest -> (O, n1 + 1) :: (O, n2 - 1) :: rest
   | _ -> assert false
 
-let dec : skew -> skew = function
+let dec s =
+  assert (is_canonical s);
+  match s with
   | [] -> raise (Failure "dec")
   | (T, 0) :: rest -> (O, 0) :: rest
   | (O, 0) :: (w, n) :: rest -> (w, n + 1) :: rest
@@ -148,10 +164,11 @@ let dec : skew -> skew = function
   | (O, n) :: [] -> (T, n - 1) :: []
 
 let cons x st =
+  assert (is_well_formed st);
   match st with
   | [] -> (1, One (0, Leaf x)) :: []
   | (w, Two (n, t1, t2)) :: [] ->
-      ((2 * w) - 1, One (n + 1, Node (x, t1, t2))) :: []
+      ((2 * (w + 1)) - 1, One (n + 1, Node (x, t1, t2))) :: []
   | (w, One (0, t)) :: [] -> (w, Two (0, t, Leaf x)) :: []
   | (w, One (n, t)) :: [] -> [ (1, One (0, Leaf x)); (w, One (n - 1, t)) ]
   | (_, One (0, t1)) :: (w2, One (n2, t2)) :: rest ->
@@ -164,12 +181,14 @@ let cons x st =
   | (_, Two (n1, t1, t2)) :: (w2, One (0, t3)) :: rest ->
       (w2, Two (n1 + 1, t3, Node (x, t1, t2))) :: rest
   | (w1, Two (n1, t1, t2)) :: (w2, One (n2, t3)) :: rest ->
-      ((w1 * 2) - 1, One (n1 + 1, Node (x, t1, t2)))
-      :: (w2, One (n2, t3))
+      ((2 * (w1 + 1)) - 1, One (n1 + 1, Node (x, t1, t2)))
+      :: (w2, One (n2 - 1, t3))
       :: rest
   | _ -> assert false
 
-let head = function
+let head st =
+  assert (is_well_formed st);
+  match st with
   | [] -> raise (Failure "head")
   | (1, One (0, Leaf a)) :: _ -> a
   | (_, One (_, Node (a, _, _))) :: _ -> a
@@ -177,7 +196,9 @@ let head = function
   | (_, Two (_, Node (a, _, _), Node _)) :: _ -> a
   | _ -> assert false
 
-let tail = function
+let tail st =
+  assert (is_well_formed st);
+  match st with
   | [] -> raise (Failure "tail")
   | (1, One (0, Leaf _)) :: rest -> rest
   | (w, One (n, Node (_, t1, t2))) :: rest -> (w / 2, Two (n, t1, t2)) :: rest
@@ -198,7 +219,6 @@ let rec lookup_tree w i t =
     | _ -> assert false
 
 let rec update_tree y w i t =
-  print_string ("i : " ^ string_of_int i ^ " w : " ^ string_of_int w ^ " \n");
   if i < 0 || i > w then raise (Failure "update_tree")
   else
     match (w, i, t) with
@@ -209,23 +229,34 @@ let rec update_tree y w i t =
         else Node (x, t1, update_tree y (w / 2) (i - 1 - (w / 2)) t2)
     | _ -> assert false
 
-let rec lookup i = function
-  | [] -> raise (Failure "lookup")
-  | (w, One (_, t)) :: ts ->
-      if i < w then lookup_tree w i t else lookup (i - w) ts
-  | (w, Two (_, t1, t2)) :: ts ->
-      if i < w then lookup_tree w i t1
-      else lookup (i - w) ((w, One (0, t2)) :: ts)
+let lookup i st =
+  let rec aux i st =
+    match st with
+    | [] -> raise (Failure "lookup")
+    | (w, One (_, t)) :: ts ->
+        if i < w then lookup_tree w i t else aux (i - w) ts
+    | (w, Two (_, t1, t2)) :: ts ->
+        if i < w then lookup_tree w i t1
+        else aux (i - w) ((w, One (0, t2)) :: ts)
+  in
+  assert (is_well_formed st);
+  aux i st
 
-let rec update y i = function
-  | [] -> raise (Failure "update")
-  | (w, One (n, t)) :: ts ->
-      if i < w then (w, One (n, update_tree y w i t)) :: ts
-      else (w, One (n, t)) :: update y (i - w) ts
-  | (w, Two (n, t1, t2)) :: ts ->
-      if i < w then (w, Two (n, update_tree y w i t1, t2)) :: ts
-      else if i < 2 * w then (w, Two (n, t1, update_tree y w (i - w) t2)) :: ts
-      else (w, Two (n, t1, t2)) :: update y (i - (2 * w)) ts
+let update y i st =
+  let rec aux y i st =
+    match st with
+    | [] -> raise (Failure "update")
+    | (w, One (n, t)) :: ts ->
+        if i < w then (w, One (n, update_tree y w i t)) :: ts
+        else (w, One (n, t)) :: aux y (i - w) ts
+    | (w, Two (n, t1, t2)) :: ts ->
+        if i < w then (w, Two (n, update_tree y w i t1, t2)) :: ts
+        else if i < 2 * w then
+          (w, Two (n, t1, update_tree y w (i - w) t2)) :: ts
+        else (w, Two (n, t1, t2)) :: aux y (i - (2 * w)) ts
+  in
+  assert (is_well_formed st);
+  aux y i st
 
 let from_list list =
   let rec aux res list =
@@ -233,13 +264,17 @@ let from_list list =
   in
   aux [] list
 
-let rec to_list : 'a skew_tree -> 'a list =
+let to_list st =
   let rec to_list_tree = function
     | Leaf a -> [ a ]
     | Node (a, t1, t2) -> to_list_tree t1 @ to_list_tree t2 @ [ a ]
   in
-  function
-  | [] -> []
-  | (_, One (_, t)) :: rest -> to_list rest @ to_list_tree t
-  | (_, Two (_, t1, t2)) :: rest ->
-      to_list rest @ to_list_tree t1 @ to_list_tree t2
+  let rec aux st =
+    match st with
+    | [] -> []
+    | (_, One (_, t)) :: rest -> aux rest @ to_list_tree t
+    | (_, Two (_, t1, t2)) :: rest ->
+        aux rest @ to_list_tree t1 @ to_list_tree t2
+  in
+  assert (is_well_formed st);
+  aux st

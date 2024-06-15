@@ -9,12 +9,12 @@ type 'a array_digit =
   | One of (int * 'a tree)
   | Two of (int * 'a tree * 'a tree)
 
-(*int same as in skew*)
 type 'a skew_tree = (int * 'a array_digit) list
 (*[@@deriving show, eq]*)
 
 val skew_to_int : skew -> int
 val skew_from_int : int -> (digit * int) list
+val pp_card_tree : Format.formatter -> int * 'a tree -> unit
 val pp_skew : Format.formatter -> skew -> unit
 val pp_skew_tree : Format.formatter -> 'a skew_tree -> unit
 val is_canonical : skew -> bool
