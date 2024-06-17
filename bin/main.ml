@@ -27,8 +27,8 @@ let () =
     (*assert (is_well_formed st);*)
     aux fmt st
   in
-  let l = [ 1; 2 ] in
-  let res = tail (from_list l) in
+  let l = [ 1; 2; 3; 4; 5 ] in
+  let res = cons 100 (from_list l) in
   pp Format.std_formatter (from_list l);
   pp Format.std_formatter res;
-  print (to_list res)
+  print (to_list (List.rev res))

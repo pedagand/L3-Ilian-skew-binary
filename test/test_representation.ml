@@ -255,22 +255,22 @@ let () =
           QCheck_alcotest.to_alcotest
             (test_qcheck_list 100 "cons" (fun l ->
                  let res = cons 100 (from_list l) in
-                 List.equal ( = ) (l @ [ 100 ]) (to_list res)));
+                 List.equal ( = ) (List.rev (100 :: List.rev l)) (to_list res)));
         ] );
       ( "QCheck : équivalence ral et list : tail ",
         [
           QCheck_alcotest.to_alcotest
             (test_qcheck_list 100 "tail" (fun l ->
-                 let l2 = 1 :: l in
-                 let res = tail (from_list l2) in
+                 let l = 1 :: l in
+                 let res = tail (from_list l) in
                  List.equal ( = )
-                   (List.rev (List.tl (List.rev l2)))
+                   (List.rev (List.tl (List.rev l)))
                    (to_list res)));
         ] );
       ( "QCheck : équivalence ral et list : head ",
         [
           QCheck_alcotest.to_alcotest
             (test_qcheck_list 100 "head" (fun l ->
-                 head (from_list l) = List.hd l));
+                 head (from_list l) = List.hd (List.rev l)));
         ] );
     ]
