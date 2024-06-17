@@ -1,10 +1,33 @@
 open Numrep.Skew
 
 let () =
-  let rec generator_tree x p =
-    if p = 1 then Leaf x
-    else Node (x, generator_tree x (p / 2), generator_tree x (p / 2))
+  let print =
+    List.iter (fun a -> Format.fprintf Format.std_formatter " %d " a)
   in
-  let n = 15 in
-  let t = generator_tree 1 n in
-  pp_card_tree Format.std_formatter (card t, t)
+  let rec pp_int_tree fmt t =
+    match t with
+    | Leaf a -> Format.fprintf fmt "Leaf %d" a
+    | Node (a, t1, t2) ->
+        Format.fprintf fmt "Node (%d, %a, %a)" a pp_int_tree t1 pp_int_tree t2
+  in
+
+  let pp fmt st =
+    let rec aux fmt st =
+      match st with
+      | [] -> Format.fprintf fmt "•"
+      | (_, One (n, t)) :: rest ->
+          aux fmt rest;
+          Format.fprintf fmt " (1 * %a ) %s" pp_int_tree t
+            (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
+      | (_, Two (n, t1, t2)) :: rest ->
+          aux fmt rest;
+          Format.fprintf fmt " (2 * %a * %a) %s" pp_int_tree t1 pp_int_tree t2
+            (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
+    in
+    assert (is_well_formed st);
+    aux fmt st
+  in
+  let l = [ 0; 1; 2 ] in
+  let res = cons 100 (from_list l) in
+  pp Format.std_formatter res;
+  print (to_list res)

@@ -37,10 +37,7 @@ let test_lookup =
 let test_qcheck n name arbitrary_type f =
   Test.make ~count:n ~name arbitrary_type f
 
-let test_bijective_from_to_list =
-  let open QCheck in
-  Test.make ~count:100 ~name:"bijective from_list to_list" (list int) (fun l ->
-      to_list (from_list l) = l)
+let test_qcheck_list n name f = Test.make ~count:n ~name (list int) f
 
 let () =
   let open Alcotest in
@@ -235,12 +232,23 @@ let () =
             (test_qcheck 100 "skew_from_int returns canonical skew"
                QCheck.small_int (fun n -> is_canonical (skew_from_int n)));
         ] );
-      ( "QCheck : bijection from_list to_list",
-        [ QCheck_alcotest.to_alcotest test_bijective_from_to_list ] );
       ( "QCheck : arbitrary_tree well_formed",
         [
           QCheck_alcotest.to_alcotest
             (test_qcheck 100 "arbitrary_tree_well_formed" arbitrary_skew_tree
                (fun s -> is_well_formed s));
+        ] );
+      ( "QCheck : bijection from_list to_list",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck_list 100 "bijective from_list to_list" (fun l ->
+                 to_list (from_list l) = l));
+        ] );
+      ( "QCheck : équivalence ral et list : cons | (::) ",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck_list 100 "cons | (::)" (fun l ->
+                 let res = cons 100 (from_list l) in
+                 List.equal ( = ) (100 :: l) (to_list res)));
         ] );
     ]
