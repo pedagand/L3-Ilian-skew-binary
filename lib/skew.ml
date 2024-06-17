@@ -197,13 +197,19 @@ let head st =
   | _ -> assert false
 
 let tail st =
+  let plus_1 = function
+    | [] -> []
+    | (w, One (n, t)) :: rest -> (w, One (n + 1, t)) :: rest
+    | (w, Two (n, t1, t2)) :: rest -> (w, Two (n + 1, t1, t2)) :: rest
+  in
   assert (is_well_formed st);
   match st with
   | [] -> raise (Failure "tail")
-  | (1, One (0, Leaf _)) :: rest -> rest
-  | (w, One (n, Node (_, t1, t2))) :: rest -> (w / 2, Two (n, t1, t2)) :: rest
-  | (1, Two (0, Leaf _, Leaf t2)) :: rest -> (1, One (0, Leaf t2)) :: rest
-  | (w, Two (n, Node (_, t1, t2), t3)) :: rest ->
+  | (1, One (0, Leaf _)) :: rest -> plus_1 rest
+  | (w, One (n, Node (_, t1, t2))) :: rest ->
+      (w / 2, Two (n - 1, t1, t2)) :: plus_1 rest
+  | (1, Two (0, Leaf t1, Leaf _)) :: rest -> (1, One (0, Leaf t1)) :: rest
+  | (w, Two (n, t3, Node (_, t1, t2))) :: rest ->
       (w / 2, Two (n - 1, t1, t2)) :: (w, One (0, t3)) :: rest
   | _ -> assert false
 

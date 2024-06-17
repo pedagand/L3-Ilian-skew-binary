@@ -119,7 +119,7 @@ let () =
           (fun a -> test_2 a tail equal_skew_tree)
           [
             ( skew_tree1,
-              [ (7, One (1, tree3)); (15, One (0, tree4)) ],
+              [ (7, One (2, tree3)); (15, One (0, tree4)) ],
               true,
               "[ (1, One (0, tree1)); (7, One (1, tree3)); (15, One (0, \
                tree4)) ]" );
@@ -244,11 +244,33 @@ let () =
             (test_qcheck_list 100 "bijective from_list to_list" (fun l ->
                  to_list (from_list l) = l));
         ] );
-      ( "QCheck : équivalence ral et list : cons | (::) ",
+      ( "QCheck : bijection from_list to_list 2",
         [
           QCheck_alcotest.to_alcotest
-            (test_qcheck_list 100 "cons | (::)" (fun l ->
+            (test_qcheck 100 "bijective from_list to_list 2" arbitrary_skew_tree
+               (fun l -> from_list (to_list l) = l));
+        ] );
+      ( "QCheck : équivalence ral et list : cons",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck_list 100 "cons" (fun l ->
                  let res = cons 100 (from_list l) in
-                 List.equal ( = ) (100 :: l) (to_list res)));
+                 List.equal ( = ) (l @ [ 100 ]) (to_list res)));
+        ] );
+      ( "QCheck : équivalence ral et list : tail ",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck_list 100 "tail" (fun l ->
+                 let l2 = 1 :: l in
+                 let res = tail (from_list l2) in
+                 List.equal ( = )
+                   (List.rev (List.tl (List.rev l2)))
+                   (to_list res)));
+        ] );
+      ( "QCheck : équivalence ral et list : head ",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck_list 100 "head" (fun l ->
+                 head (from_list l) = List.hd l));
         ] );
     ]
