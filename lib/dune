@@ -1,3 +1,5 @@
 (library
  (name numrep)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq))
  (libraries lwt))

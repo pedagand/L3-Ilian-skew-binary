@@ -1,19 +1,22 @@
 open Numrep.Skew
 open QCheck
 
+let int_skew_tree =
+  Alcotest.testable
+    (pp_skew_tree (fun oc -> Format.fprintf oc "%d"))
+    (equal_skew_tree ( = ))
+
+let int_tree =
+  Alcotest.testable
+    (pp_tree (fun oc -> Format.fprintf oc "%d"))
+    (equal_tree ( = ))
+
 let rec pow_2 n =
   if n = 0 then 1
   else if n mod 2 = 0 then
     let y = pow_2 (n / 2) in
     y * y
   else 2 * pow_2 (n - 1)
-
-let rec equal_tree t1 t2 =
-  match (t1, t2) with
-  | Leaf a, Leaf b -> a = b
-  | Node (x1, t1, t2), Node (x2, t3, t4) ->
-      x1 = x2 && equal_tree t1 t3 && equal_tree t2 t4
-  | _ -> false
 
 let only_one = List.init 50 (fun _ -> (O, 0))
 let s1 = [ (T, 0); (O, 3); (O, 0) ]
@@ -55,7 +58,7 @@ let generator_small_int =
 
 let generator_skew : skew Gen.t =
  fun st ->
-  let n = generator_small_int st + 1 in
+  let n = generator_small_int st in
   skew_from_int n
 
 let rec generator_tree gen_a p st =
@@ -88,7 +91,8 @@ let generator_skew_tree gen_a : 'a skew_tree Gen.t =
 
 let arbitrary_skew_tree =
   QCheck.make
-    ~print:(Format.asprintf "%a" pp_skew_tree)
+    ~print:
+      (Format.asprintf "%a" (pp_skew_tree (fun oc -> Format.fprintf oc "%d")))
     (generator_skew_tree Gen.int)
 
 let arbitrary_skew =

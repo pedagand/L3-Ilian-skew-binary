@@ -7,6 +7,7 @@ type 'a tree = Leaf of 'a | Node of 'a * 'a tree * 'a tree
 type 'a array_digit =
   | One of (int * 'a tree)
   | Two of (int * 'a tree * 'a tree)
+[@@deriving show, eq]
 
 (*int same as in skew*)
 type 'a skew_tree = (int * 'a array_digit) list [@@deriving show, eq]
@@ -107,38 +108,38 @@ let rec pp_skew fmt (s : skew) =
         (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
 
 (*affiche dans l'ordre naturel*)
-let pp_skew_tree fmt st =
-  let rec aux fmt st =
-    match st with
-    | [] -> Format.fprintf fmt "•"
-    | (_, One (n, t)) :: rest ->
-        aux fmt rest;
-        Format.fprintf fmt " (1 * card %d ) %s" (card t)
-          (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
-    | (_, Two (n, t1, t2)) :: rest ->
-        aux fmt rest;
-        Format.fprintf fmt " (2 * card %d * card %d) %s" (card t1) (card t2)
-          (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
-  in
-  assert (is_well_formed st);
-  aux fmt st
+(*let pp_skew_tree fmt st =
+    let rec aux fmt st =
+      match st with
+      | [] -> Format.fprintf fmt "•"
+      | (_, One (n, t)) :: rest ->
+          aux fmt rest;
+          Format.fprintf fmt " (1 * card %d ) %s" (card t)
+            (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
+      | (_, Two (n, t1, t2)) :: rest ->
+          aux fmt rest;
+          Format.fprintf fmt " (2 * card %d * card %d) %s" (card t1) (card t2)
+            (String.init (2 * n) (fun n -> if n mod 2 = 0 then '0' else ' '))
+    in
+    assert (is_well_formed st);
+    aux fmt st
 
-let equal_skew_tree s1 s2 =
-  let rec aux t1 t2 =
-    match (t1, t2) with
-    | Leaf x1, Leaf x2 -> x1 = x2
-    | Node (x1, t1, t2), Node (x2, t3, t4) -> x1 = x2 && aux t1 t3 && aux t2 t4
-    | _ -> false
-  in
-  List.for_all2
-    (fun d1 d2 ->
-      match (d1, d2) with
-      | (w1, One (n1, t1)), (w2, One (n2, t2)) ->
-          w1 = w2 && n1 = n2 && aux t1 t2
-      | (w1, Two (n1, t1, t2)), (w2, Two (n2, t3, t4)) ->
-          w1 = w2 && n1 = n2 && aux t1 t3 && aux t2 t4
-      | _ -> false)
-    s1 s2
+  let equal_skew_tree s1 s2 =
+    let rec aux t1 t2 =
+      match (t1, t2) with
+      | Leaf x1, Leaf x2 -> x1 = x2
+      | Node (x1, t1, t2), Node (x2, t3, t4) -> x1 = x2 && aux t1 t3 && aux t2 t4
+      | _ -> false
+    in
+    List.for_all2
+      (fun d1 d2 ->
+        match (d1, d2) with
+        | (w1, One (n1, t1)), (w2, One (n2, t2)) ->
+            w1 = w2 && n1 = n2 && aux t1 t2
+        | (w1, Two (n1, t1, t2)), (w2, Two (n2, t3, t4)) ->
+            w1 = w2 && n1 = n2 && aux t1 t3 && aux t2 t4
+        | _ -> false)
+      s1 s2*)
 
 let inc s =
   assert (is_canonical s);
