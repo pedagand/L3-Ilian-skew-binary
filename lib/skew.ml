@@ -193,8 +193,8 @@ let head st =
   | [] -> raise (Failure "head")
   | (1, One (0, Leaf a)) :: _ -> a
   | (_, One (_, Node (a, _, _))) :: _ -> a
-  | (1, Two (0, Leaf a, Leaf _)) :: _ -> a
-  | (_, Two (_, Node (a, _, _), Node _)) :: _ -> a
+  | (1, Two (0, Leaf _, Leaf a)) :: _ -> a
+  | (_, Two (_, Node _, Node (a, _, _))) :: _ -> a
   | _ -> assert false
 
 let tail st =
@@ -243,8 +243,8 @@ let lookup i st =
     | (w, One (_, t)) :: ts ->
         if i < w then lookup_tree w i t else aux (i - w) ts
     | (w, Two (_, t1, t2)) :: ts ->
-        if i < w then lookup_tree w i t1
-        else aux (i - w) ((w, One (0, t2)) :: ts)
+        if i < w then lookup_tree w i t2
+        else aux (i - w) ((w, One (0, t1)) :: ts)
   in
   assert (is_well_formed st);
   aux i st
@@ -269,19 +269,18 @@ let from_list list =
   let rec aux res list =
     match list with [] -> res | a :: rest -> aux (cons a res) rest
   in
-  aux [] list
+  aux [] (List.rev list)
 
 let to_list st =
-  let rec to_list_tree = function
-    | Leaf a -> [ a ]
-    | Node (a, t1, t2) -> to_list_tree t1 @ to_list_tree t2 @ [ a ]
-  in
-  let rec aux st =
-    match st with
+  (*let pp = pp_skew_tree
+    (fun oc -> Format.fprintf oc "%d")
+    Format.std_formatter in*)
+  let rec aux = function
     | [] -> []
-    | (_, One (_, t)) :: rest -> aux rest @ to_list_tree t
-    | (_, Two (_, t1, t2)) :: rest ->
-        aux rest @ to_list_tree t1 @ to_list_tree t2
+    | st ->
+        let a = head st in
+        (*Format.fprintf Format.std_formatter "head : %d tail : " a; (pp (tail st)); Format.fprintf Format.std_formatter "\n";*)
+        a :: aux (tail st)
   in
   assert (is_well_formed st);
   aux st

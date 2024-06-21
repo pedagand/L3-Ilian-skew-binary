@@ -16,22 +16,8 @@ let test_lookup_tree =
   Alcotest.test_case "lookup_tree" `Quick (fun () ->
       Alcotest.(check bool) "same result" true result)
 
-let test_lookup =
-  let rec aux i =
-    if i = 10 then true
-    else
-      (let desired = if i < 6 then i + 15 else i - 6 in
-       lookup i lookup_test = desired)
-      && aux (i + 1)
-  in
-  let result = aux 0 in
-  Alcotest.test_case "lookup_tree" `Quick (fun () ->
-      Alcotest.(check bool) "same result" true result)
-
 let test_qcheck n name (arbitrary_type : 'a arbitrary) f =
   Test.make ~count:n ~name arbitrary_type f
-
-let test_qcheck_list n name f = Test.make ~count:n ~name (list int) f
 
 let () =
   let open Alcotest in
@@ -71,10 +57,12 @@ let () =
           ] );
       ( "inc",
         List.map
-          (test (fun x -> skew_to_int (inc x)) int)
-          (List.map
-             (fun s -> (s, skew_to_int s + 1, Format.asprintf "%a" pp_skew s))
-             [ s1; s2; s3; s4 ]) );
+          (fun x ->
+            test
+              (fun x -> skew_to_int (inc x))
+              int
+              (x, skew_to_int x + 1, Format.asprintf "%a" pp_skew x))
+          [ s1; s2; s3; s4 ] );
       ( "cons",
         List.map
           (test (cons 1) int_skew_tree)
@@ -118,7 +106,6 @@ let () =
               "[ (7, Two (2, tree3, tree3)); (15, One (0, tree4)) ]" );
           ] );
       ("lookup tree", [ test_lookup_tree ]);
-      ("lookup", [ test_lookup ]);
       ( "update_tree",
         List.map
           (test (fun x -> update_tree 100 15 x tree_lookup_test) int_tree)
@@ -221,9 +208,8 @@ let () =
       ( "QCheck : bijection from_list to_list",
         [
           QCheck_alcotest.to_alcotest
-            (let t : int list arbitrary = list int in
-             test_qcheck 100 "bijective from_list to_list" t (fun l ->
-                 to_list (from_list l) = l));
+            (test_qcheck 100 "bijective from_list to_list"
+               (QCheck.list QCheck.int) (fun l -> to_list (from_list l) = l));
         ] );
       ( "QCheck : bijection from_list to_list 2",
         [
@@ -234,24 +220,31 @@ let () =
       ( "QCheck : équivalence ral et list : cons",
         [
           QCheck_alcotest.to_alcotest
-            (test_qcheck_list 100 "cons" (fun l ->
+            (test_qcheck 100 "cons" (QCheck.list QCheck.int) (fun l ->
                  let res = cons 100 (from_list l) in
-                 List.equal ( = ) (List.rev (100 :: List.rev l)) (to_list res)));
+                 List.equal ( = ) (100 :: l) (to_list res)));
         ] );
       ( "QCheck : équivalence ral et list : tail ",
         [
           QCheck_alcotest.to_alcotest
-            (test_qcheck_list 100 "tail" (fun l ->
-                 let l = 1 :: l in
+            (test_qcheck 100 "tail" (QCheck.list QCheck.int) (fun l ->
+                 assume (List.length l > 0);
                  let res = tail (from_list l) in
-                 List.equal ( = )
-                   (List.rev (List.tl (List.rev l)))
-                   (to_list res)));
+                 List.equal ( = ) (List.tl l) (to_list res)));
         ] );
-      ( "QCheck : équivalence ral et list : head ",
+      ( "QCheck : équivalence ral et list : head",
         [
           QCheck_alcotest.to_alcotest
-            (test_qcheck_list 100 "head" (fun l ->
-                 head (from_list l) = List.hd (List.rev l)));
+            (test_qcheck 100 "head" (QCheck.list QCheck.int) (fun l ->
+                 assume (List.length l > 0);
+                 head (from_list l) = List.hd l));
+        ] );
+      ( "QCheck : équivalence ral et list : lookup",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "lookup" (QCheck.list QCheck.int) (fun l ->
+                 assume (List.length l > 0);
+                 let s = from_list l in
+                 lookup 0 s = List.nth l 0));
         ] );
     ]

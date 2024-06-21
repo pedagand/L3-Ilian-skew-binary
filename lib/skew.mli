@@ -39,4 +39,4 @@ val lookup_tree : int -> int -> 'a tree -> 'a (*weight, indice, tree*)
 val update : 'a -> int -> 'a skew_tree -> 'a skew_tree
 val update_tree : 'a -> int -> int -> 'a tree -> 'a tree
 val from_list : 'a list -> 'a skew_tree
-val to_list : 'a skew_tree -> 'a list
+val to_list : int skew_tree -> int list
