@@ -12,7 +12,6 @@ type 'a array_digit =
 type 'a skew_tree = (int * 'a array_digit) list
 (*[@@deriving show, eq]*)
 
-(*val to_bin : 'a skew_tree -> skew*)
 val skew_to_int : skew -> int
 val skew_from_int : int -> (digit * int) list
 val pp_card_tree : Format.formatter -> int * 'a tree -> unit
@@ -40,3 +39,4 @@ val update : 'a -> int -> 'a skew_tree -> 'a skew_tree
 val update_tree : 'a -> int -> int -> 'a tree -> 'a tree
 val from_list : 'a list -> 'a skew_tree
 val to_list : int skew_tree -> int list
+val to_bin : 'a skew_tree -> skew

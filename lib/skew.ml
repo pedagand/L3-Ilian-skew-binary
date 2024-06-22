@@ -272,15 +272,15 @@ let from_list list =
   aux [] (List.rev list)
 
 let to_list st =
-  (*let pp = pp_skew_tree
-    (fun oc -> Format.fprintf oc "%d")
-    Format.std_formatter in*)
+  let rec aux = function [] -> [] | st -> head st :: aux (tail st) in
+  assert (is_well_formed st);
+  aux st
+
+let to_bin st =
   let rec aux = function
     | [] -> []
-    | st ->
-        let a = head st in
-        (*Format.fprintf Format.std_formatter "head : %d tail : " a; (pp (tail st)); Format.fprintf Format.std_formatter "\n";*)
-        a :: aux (tail st)
+    | (_, One (d, _)) :: rest -> (O, d) :: aux rest
+    | (_, Two (d, _, _)) :: rest -> (T, d) :: aux rest
   in
   assert (is_well_formed st);
   aux st

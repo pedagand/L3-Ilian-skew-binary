@@ -173,6 +173,13 @@ let () =
               ],
               "6" );
           ] );
+      ( "to_bin",
+        List.map (test to_bin skew)
+          [
+            ([], [], "[]");
+            (skew_tree1, [ (O, 0); (O, 1); (O, 0) ], "skew_tree_1");
+            (skew_tree2, [ (T, 2); (O, 0) ], "s2");
+          ] );
       ( "QCheck : inc",
         [
           QCheck_alcotest.to_alcotest
@@ -183,7 +190,6 @@ let () =
         [
           QCheck_alcotest.to_alcotest
             (test_qcheck 100 "dec" arbitrary_skew (fun s ->
-                 assume false;
                  assume (skew_to_int s != 0);
                  skew_to_int s - 1 = skew_to_int (dec s)));
         ] );
@@ -246,5 +252,20 @@ let () =
                  assume (List.length l > 0);
                  let s = from_list l in
                  lookup 0 s = List.nth l 0));
+        ] );
+      ( "QCheck : relation structurelle ral et bin : cons",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "cons" arbitrary_skew_tree (fun s ->
+                 let res = cons 100 s in
+                 List.equal ( = ) (inc (to_bin s)) (to_bin res)));
+        ] );
+      ( "QCheck : relation structurelle ral et bin : tail",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "tail" arbitrary_skew_tree (fun s ->
+                 assume (skew_to_int (to_bin s) > 0);
+                 let res = tail s in
+                 List.equal ( = ) (dec (to_bin s)) (to_bin res)));
         ] );
     ]

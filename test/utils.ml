@@ -11,6 +11,12 @@ let int_tree =
     (pp_tree (fun oc -> Format.fprintf oc "%d"))
     (equal_tree ( = ))
 
+let skew =
+  Alcotest.testable pp_skew (fun s1 s2 ->
+      let s1 = skew_from_int (skew_to_int s1) in
+      let s2 = skew_from_int (skew_to_int s2) in
+      List.equal ( = ) s1 s2)
+
 let rec pow_2 n =
   if n = 0 then 1
   else if n mod 2 = 0 then
