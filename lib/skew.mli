@@ -29,6 +29,8 @@ val equal_tree : ('a -> 'a -> bool) -> 'a tree -> 'a tree -> bool
 val equal_skew_tree : ('a -> 'a -> bool) -> 'a skew_tree -> 'a skew_tree -> bool
 val inc : skew -> skew
 val dec : skew -> skew
+val sub_1 : skew -> skew
+val sub : skew -> skew -> skew
 val cons : 'a -> 'a skew_tree -> 'a skew_tree
 val card : 'a tree -> int
 val head : 'a skew_tree -> 'a

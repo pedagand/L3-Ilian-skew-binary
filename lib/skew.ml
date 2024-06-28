@@ -164,6 +164,26 @@ let dec s =
   | (O, n) :: (w, n2) :: rest -> (T, n - 1) :: (w, n2 + 1) :: rest
   | (O, n) :: [] -> (T, n - 1) :: []
 
+let sub_1 s =
+  let plus_1 = function [] -> [] | (a, n) :: rest -> (a, n + 1) :: rest in
+  assert (is_canonical s);
+  match s with
+  | [] -> raise (Failure "sub_1")
+  | (O, 0) :: rest -> plus_1 rest
+  | (O, n) :: rest -> (T, n - 1) :: plus_1 rest
+  | (T, 0) :: rest -> (O, 0) :: rest
+  | (T, n) :: rest -> (T, n - 1) :: (O, 0) :: rest
+
+let rec sub s1 = function
+  | [] -> s1
+  | s2 -> if s1 = [] then raise (Failure "sub") else sub (sub_1 s1) (sub_1 s2)
+
+(*let sub_v2 s1 s2 =
+    let rec aux s1 s2 acc = match s2 with
+  | [] -> s1
+  | (O, n) :: rest ->
+  in aux s1 s2 0*)
+
 let cons x st =
   assert (is_well_formed st);
   match st with

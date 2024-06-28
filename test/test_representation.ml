@@ -193,6 +193,21 @@ let () =
                  assume (skew_to_int s != 0);
                  skew_to_int s - 1 = skew_to_int (dec s)));
         ] );
+      ( "QCheck : sub_1",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "sub_1" arbitrary_skew (fun s ->
+                 assume (skew_to_int s > 0);
+                 skew_to_int s - 1 = skew_to_int (sub_1 s)));
+        ] );
+      ( "QCheck : sub",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "sub" (QCheck.pair arbitrary_skew arbitrary_skew)
+               (fun (s1, s2) ->
+                 assume (skew_to_int s1 >= skew_to_int s2);
+                 skew_to_int s1 - skew_to_int s2 = skew_to_int (sub s1 s2)));
+        ] );
       ( "QCheck : bijection skew_from_int skew_to_int",
         [
           QCheck_alcotest.to_alcotest
@@ -230,28 +245,63 @@ let () =
                  let res = cons 100 (from_list l) in
                  List.equal ( = ) (100 :: l) (to_list res)));
         ] );
+      ( "QCheck : équivalence ral et list : cons from arbitrary_skew_tree",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "cons" arbitrary_skew_tree (fun l ->
+                 let res = cons 100 l in
+                 List.equal ( = ) (List.cons 100 (to_list l)) (to_list res)));
+        ] );
       ( "QCheck : équivalence ral et list : tail ",
         [
           QCheck_alcotest.to_alcotest
-            (test_qcheck 100 "tail" (QCheck.list QCheck.int) (fun l ->
+            (test_qcheck 100 "tail"
+               QCheck.(list int)
+               (fun l ->
                  assume (List.length l > 0);
                  let res = tail (from_list l) in
                  List.equal ( = ) (List.tl l) (to_list res)));
         ] );
+      ( "QCheck : équivalence ral et list : tail from arbitrary_skew_tree",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "tail" arbitrary_skew_tree (fun l ->
+                 assume (List.length l > 0);
+                 let res = tail l in
+                 List.equal ( = ) (List.tl (to_list l)) (to_list res)));
+        ] );
       ( "QCheck : équivalence ral et list : head",
         [
           QCheck_alcotest.to_alcotest
-            (test_qcheck 100 "head" (QCheck.list QCheck.int) (fun l ->
+            (test_qcheck 100 "head"
+               QCheck.(list int)
+               (fun l ->
                  assume (List.length l > 0);
                  head (from_list l) = List.hd l));
+        ] );
+      ( "QCheck : équivalence ral et list : head from arbitrary_skew_tree",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "head" arbitrary_skew_tree (fun l ->
+                 assume (List.length l > 0);
+                 head l = List.hd (to_list l)));
         ] );
       ( "QCheck : équivalence ral et list : lookup",
         [
           QCheck_alcotest.to_alcotest
-            (test_qcheck 100 "lookup" (QCheck.list QCheck.int) (fun l ->
+            (test_qcheck 100 "lookup"
+               QCheck.(list int)
+               (fun l ->
                  assume (List.length l > 0);
                  let s = from_list l in
                  lookup 0 s = List.nth l 0));
+        ] );
+      ( "QCheck : équivalence ral et list : lookup from arbitrary_skew_tree",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "lookup" arbitrary_skew_tree (fun l ->
+                 assume (List.length l > 0);
+                 lookup 0 l = List.nth (to_list l) 0));
         ] );
       ( "QCheck : relation structurelle ral et bin : cons",
         [
