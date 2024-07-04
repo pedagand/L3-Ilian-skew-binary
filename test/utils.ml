@@ -99,7 +99,7 @@ let arbitrary_skew_tree =
   QCheck.make
     ~print:
       (Format.asprintf "%a" (pp_skew_tree (fun oc -> Format.fprintf oc "%d")))
-    (generator_skew_tree Gen.int)
+    (generator_skew_tree Gen.small_int)
 
 let arbitrary_skew =
   QCheck.make ~print:(Format.asprintf "%a" pp_skew) generator_skew

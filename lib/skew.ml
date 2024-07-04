@@ -178,12 +178,6 @@ let rec sub s1 = function
   | [] -> s1
   | s2 -> if s1 = [] then raise (Failure "sub") else sub (sub_1 s1) (sub_1 s2)
 
-(*let sub_v2 s1 s2 =
-    let rec aux s1 s2 acc = match s2 with
-  | [] -> s1
-  | (O, n) :: rest ->
-  in aux s1 s2 0*)
-
 let cons x st =
   assert (is_well_formed st);
   match st with
@@ -240,14 +234,16 @@ let rec lookup_tree w i t =
     | Node (_, t1, t2) ->
         Format.fprintf fmt "Node (%a , %a)" my_pp_tree t1 my_pp_tree t2
   in
-  if i < 0 || i > w then raise (Failure "lookup_tree")
+  if i < 0 || i > w then (
+    print_int i;
+    raise (Failure "lookup_tree"))
   else
     match (w, i, t) with
     | 1, 0, Leaf x -> x
     | _, 0, Node (x, _, _) -> x
     | w, i, Node (_, t1, t2) ->
-        if i <= w / 2 then lookup_tree (w / 2) (i - 1) t1
-        else lookup_tree (w / 2) (i - 1 - (w / 2)) t2
+        if i <= w / 2 then lookup_tree (w / 2) (i - 1) t2
+        else lookup_tree (w / 2) (i - 1 - (w / 2)) t1
     | _ ->
         Format.fprintf Format.std_formatter "w : %d | i : %d | t : %a\n" w i
           my_pp_tree t;
@@ -283,7 +279,6 @@ let to_bin st =
     | (_, One (d, _)) :: rest -> (O, d) :: aux rest
     | (_, Two (d, _, _)) :: rest -> (T, d) :: aux rest
   in
-  assert (is_well_formed st);
   aux st
 
 let lookup_bin (i : skew) (st : 'a skew_tree) =
@@ -292,42 +287,69 @@ let lookup_bin (i : skew) (st : 'a skew_tree) =
     | [] -> []
     | (w, d) :: ts -> (w, d + acc) :: compose_bin (d + acc + 1) ts
   in
-  let rec uncompose_bin (a, n) l =
-    match l with
-    | [] -> (a, n) :: []
-    | (b, m) :: [] -> [ (a, n - m - 1); (b, m) ]
-    | (O, m) :: rest -> (a, n - m - 1) :: uncompose_bin (O, m) rest
-    | _ -> assert false
+  let uncompose_bin l =
+    let rec aux (a, n) l =
+      match l with
+      | [] -> (a, n) :: []
+      | (b, m) :: [] -> [ (a, n - m - 1); (b, m) ]
+      | (O, m) :: rest -> (a, n - m - 1) :: aux (O, m) rest
+      | _ -> assert false
+    in
+    match l with [] -> [] | (a, n) :: t -> List.rev (aux (a, n) t)
   in
   let rec compose_ral acc = function
     | [] -> []
     | (w, One (d, t)) :: ts ->
         (w, One (d + acc, t)) :: compose_ral (d + acc + 1) ts
     | (w, Two (d, t1, t2)) :: ts ->
-        (w, Two (d + acc, t1, t2)) :: compose_ral (d + acc) ts
+        (w, Two (d + acc, t1, t2)) :: compose_ral (d + acc + 1) ts
+  in
+  (* takes bins in the form returned by compose *)
+  let rec greater b1 b2 =
+    match (b1, b2) with
+    | _, [] -> true
+    | [], _ -> false
+    | (O, d) :: ts1, (O, d2) :: ts2 ->
+        if d = d2 then greater ts1 ts2 else d > d2
+    | (T, d) :: ts1, (T, d2) :: ts2 ->
+        if d = d2 then greater ts1 ts2 else d > d2
+    | (O, d) :: _, (T, d2) :: _ -> d > d2
+    | (T, d) :: _, (O, d2) :: _ -> d >= d2
   in
   let rec aux i st =
     match (i, st) with
-    | (O, d) :: ts, (_, One (_, t)) :: [] ->
-        lookup_tree (card t)
-          (skew_to_int (List.rev (uncompose_bin (O, d) ts)))
-          t
-    | (O, d1) :: ts1, (_, One (d2, t)) :: (w, One (d3, t2)) :: ts2 ->
+    | [], (_, One (_, t)) :: [] -> lookup_tree (card t) 0 t
+    | [], (_, Two (_, _, t)) :: [] -> lookup_tree (card t) 0 t
+    | (_, _) :: _, (_, One (_, t)) :: [] ->
+        lookup_tree (card t) (skew_to_int (uncompose_bin i)) t
+    | (_, d1) :: _, (_, Two (d2, t1, t2)) :: [] ->
+        let uncomposed_i = uncompose_bin i in
+        if d1 = d2 then
+          lookup_tree (card t1) (skew_to_int uncomposed_i - card t1) t1
+        else lookup_tree (card t2) (skew_to_int uncomposed_i) t2
+    | [], (_, One (_, _)) :: (w, One (d3, t2)) :: ts2 ->
+        aux [] ((w, One (d3, t2)) :: ts2)
+    | (_, d1) :: _, (_, One (d2, t)) :: (w, One (d3, t2)) :: ts2 ->
         if d1 <= d2 && d1 >= d3 then
+          let uncomposed_i, uncomposed_ts =
+            (uncompose_bin i, uncompose_bin (to_bin ((w, One (d3, t2)) :: ts2)))
+          in
+          if greater i (to_bin ((w, One (d3, t2)) :: ts2)) then
+            lookup_tree (card t)
+              (skew_to_int (sub uncomposed_i uncomposed_ts))
+              t
+          else aux i ((w, One (d3, t2)) :: ts2)
+        else aux i ((w, One (d3, t2)) :: ts2)
+    | [], (_, One (_, _)) :: (w, Two (d3, t2, t3)) :: ts2 ->
+        aux [] ((w, Two (d3, t2, t3)) :: ts2)
+    | (c, d1) :: _, (_, One (d2, t)) :: (w, Two (d3, t2, t3)) :: ts2 ->
+        if d1 <= d2 && if c = O then d1 > d3 else d1 >= d3 then
           lookup_tree (card t)
             (skew_to_int
-               (sub
-                  (List.rev (uncompose_bin (O, d1) ts1))
-                  (to_bin ((w, One (d3, t2)) :: ts2))))
+               (sub (uncompose_bin i)
+                  (uncompose_bin (to_bin ((w, Two (d3, t2, t3)) :: ts2)))))
             t
-        else aux i ((w, One (d3, t2)) :: ts2)
-    | (O, d1) :: ts, (d2, Two (_, t1, t2)) :: [] ->
-        let uncompose_i = List.rev (uncompose_bin (O, d1) ts) in
-        if d1 = d2 then lookup_tree (card t2) (skew_to_int uncompose_i) t2
-        else lookup_tree (card t1) (skew_to_int uncompose_i - card t1) t1
-    (*| (O, d1) :: ts1, (_, Two (d2, t1, t2)) :: ts2 -> ()
-      | (T, d1) :: _, (_, One (d2, t)) :: ts2 -> ()
-      | (T, d1) :: _, (_, Two (d2, _, t)) :: ts2 -> ()*)
+        else aux i ((w, Two (d3, t2, t3)) :: ts2)
     | _ -> assert false
   in
   assert (is_well_formed st && is_canonical i);
@@ -357,14 +379,5 @@ let from_list list =
 
 let to_list st =
   let rec aux = function [] -> [] | st -> head st :: aux (tail st) in
-  assert (is_well_formed st);
-  aux st
-
-let to_bin st =
-  let rec aux = function
-    | [] -> []
-    | (_, One (d, _)) :: rest -> (O, d) :: aux rest
-    | (_, Two (d, _, _)) :: rest -> (T, d) :: aux rest
-  in
   assert (is_well_formed st);
   aux st

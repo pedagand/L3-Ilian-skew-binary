@@ -17,38 +17,37 @@ let () =
     assert (is_well_formed st);
     aux fmt st
   in
-  let tree_lookup_test =
-    Node
-      ( 0,
-        Node (1, Node (2, Leaf 3, Leaf 4), Node (5, Leaf 6, Leaf 7)),
-        Node (8, Node (9, Leaf 10, Leaf 11), Node (12, Leaf 13, Leaf 14)) )
+
+  let lookup_test =
+    [
+      (3, One (1, Node (6, Leaf 8, Leaf 5)));
+      (7, One (0, Node (5, Node (38, Leaf 7, Leaf 3), Node (5, Leaf 3, Leaf 7))));
+      ( 31,
+        One
+          ( 1,
+            Node
+              ( 2,
+                Node
+                  ( 9,
+                    Node (4, Node (3, Leaf 1, Leaf 2), Node (2, Leaf 7, Leaf 3)),
+                    Node (87, Node (7, Leaf 8, Leaf 8), Node (1, Leaf 0, Leaf 5))
+                  ),
+                Node
+                  ( 44,
+                    Node (6, Node (83, Leaf 5, Leaf 4), Node (6, Leaf 1, Leaf 1)),
+                    Node (9, Node (8, Leaf 0, Leaf 7), Node (34, Leaf 6, Leaf 2))
+                  ) ) ) );
+    ]
   in
 
-  (*let lookup_test =
-      [
-        (3, Two (1, Node (15, Leaf 16, Leaf 17), Node (18, Leaf 19, Leaf 20)));
-        (15, One (1, tree_lookup_test));
-      ]
-    in
-
-
-
-    let rec k i =
-      if i = 20 then ()
-      else
-        Format.fprintf Format.std_formatter
-          "i : %d | lookup : %d  |  lookup_bin : %d\n" i (lookup i lookup_test)
-          (lookup_bin (skew_from_int i) lookup_test);
-      k (i + 1)
-    in
-
-    Format.fprintf Format.std_formatter "tree : %a\n" my_pp_skew_tree lookup_test;
-    k 0*)
-  let test_one =
-    [ (3, One (1, Node (1, Leaf 2, Leaf 3))); (15, One (1, tree_lookup_test)) ]
+  let rec k i =
+    if i = 3 + 7 + 31 then ()
+    else (
+      Format.fprintf Format.std_formatter
+        "i : %d | lookup : %d  |  lookup_bin : %d\n" i (lookup i lookup_test)
+        (lookup_bin (skew_from_int i) lookup_test);
+      k (i + 1))
   in
-  Format.fprintf Format.std_formatter "tree : %a\n" my_pp_skew_tree test_one;
-  let i = 3 in
-  Format.fprintf Format.std_formatter
-    "i : %d | lookup : %d  |  lookup_bin : %d\n" i (lookup i test_one)
-    (lookup_bin (skew_from_int i) test_one)
+
+  Format.fprintf Format.std_formatter "tree : %a\n" my_pp_skew_tree lookup_test;
+  k 0

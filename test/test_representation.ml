@@ -8,14 +8,6 @@ let test (f : 'a -> 'b) (c : 'b Alcotest.testable)
   Alcotest.test_case str `Quick (fun () ->
       Alcotest.(check c) "same result" expect result)
 
-let test_lookup_tree =
-  let rec aux i =
-    if i = 15 then true else lookup_tree 15 i tree_lookup_test = i && aux (i + 1)
-  in
-  let result = aux 0 in
-  Alcotest.test_case "lookup_tree" `Quick (fun () ->
-      Alcotest.(check bool) "same result" true result)
-
 let test_qcheck n name (arbitrary_type : 'a arbitrary) f =
   Test.make ~count:n ~name arbitrary_type f
 
@@ -105,7 +97,6 @@ let () =
               ],
               "[ (7, Two (2, tree3, tree3)); (15, One (0, tree4)) ]" );
           ] );
-      ("lookup tree", [ test_lookup_tree ]);
       ( "update_tree",
         List.map
           (test (fun x -> update_tree 100 15 x tree_lookup_test) int_tree)
@@ -230,7 +221,8 @@ let () =
         [
           QCheck_alcotest.to_alcotest
             (test_qcheck 100 "bijective from_list to_list"
-               (QCheck.list QCheck.int) (fun l -> to_list (from_list l) = l));
+               QCheck.(list int)
+               (fun l -> to_list (from_list l) = l));
         ] );
       ( "QCheck : bijection from_list to_list 2",
         [
@@ -241,7 +233,9 @@ let () =
       ( "QCheck : équivalence ral et list : cons",
         [
           QCheck_alcotest.to_alcotest
-            (test_qcheck 100 "cons" (QCheck.list QCheck.int) (fun l ->
+            (test_qcheck 100 "cons"
+               QCheck.(list int)
+               (fun l ->
                  let res = cons 100 (from_list l) in
                  List.equal ( = ) (100 :: l) (to_list res)));
         ] );
@@ -301,7 +295,16 @@ let () =
           QCheck_alcotest.to_alcotest
             (test_qcheck 100 "lookup" arbitrary_skew_tree (fun l ->
                  assume (List.length l > 0);
-                 lookup 0 l = List.nth (to_list l) 0));
+                 let idx =
+                   Gen.generate1 (Gen.int_bound (skew_to_int (to_bin l) - 1))
+                 in
+                 let result = lookup idx l in
+                 let expected = List.nth (to_list l) idx in
+                 if result <> expected then
+                   QCheck.Test.fail_reportf
+                     "Test failed for idx=%d: lookup=%d, list.nth=%d" idx result
+                     expected;
+                 result = expected));
         ] );
       ( "QCheck : relation structurelle ral et bin : cons",
         [
@@ -317,5 +320,21 @@ let () =
                  assume (skew_to_int (to_bin s) > 0);
                  let res = tail s in
                  List.equal ( = ) (dec (to_bin s)) (to_bin res)));
+        ] );
+      ( "QCheck : égalité entre lookup et lookup avec indice en skew_bin",
+        [
+          QCheck_alcotest.to_alcotest
+            (test_qcheck 100 "lookup" arbitrary_skew_tree (fun l ->
+                 assume (List.length l > 1);
+                 let idx =
+                   Gen.generate1 (Gen.int_bound (skew_to_int (to_bin l) - 1))
+                 in
+                 let result = lookup idx l in
+                 let expected = lookup_bin (skew_from_int idx) l in
+                 if result <> expected then
+                   QCheck.Test.fail_reportf
+                     "Test failed for idx=%d: lookup=%d, lookup_bin=%d" idx
+                     result expected;
+                 result = expected));
         ] );
     ]
