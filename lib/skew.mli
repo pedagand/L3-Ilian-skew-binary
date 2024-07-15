@@ -16,6 +16,7 @@ val skew_to_int : skew -> int
 val skew_from_int : int -> (digit * int) list
 val pp_card_tree : Format.formatter -> int * 'a tree -> unit
 val pp_skew : Format.formatter -> skew -> unit
+val pp_skew_natural : Format.formatter -> skew -> unit
 
 val pp_tree :
   (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a tree -> unit
@@ -33,11 +34,15 @@ val sub_1 : skew -> skew
 val sub : skew -> skew -> skew
 val cons : 'a -> 'a skew_tree -> 'a skew_tree
 val card : 'a tree -> int
+val height : 'a tree -> int
 val head : 'a skew_tree -> 'a
 val tail : 'a skew_tree -> 'a skew_tree
 val lookup : int -> 'a skew_tree -> 'a
 val lookup_bin : skew -> 'a skew_tree -> 'a
 val lookup_tree : int -> int -> 'a tree -> 'a (*weight, indice, tree*)
+val compose_bin : skew -> skew
+val uncompose_bin : skew -> skew
+val lookup_tree_bin : skew -> 'a tree -> 'a
 val update : 'a -> int -> 'a skew_tree -> 'a skew_tree
 val update_tree : 'a -> int -> int -> 'a tree -> 'a tree
 val from_list : 'a list -> 'a skew_tree
