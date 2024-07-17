@@ -374,17 +374,19 @@ let lookup_bin (i : skew) (st : 'a skew_tree) =
           assert (d1 < d2);
           lookup_tree_bin i t2)
     | [], (_, One (_, _)) :: ts2 -> aux [] ts2
-    | (_, d1) :: _, (_, One (d2, t)) :: ((_, One (d3, _)) :: _ as ts) ->
-        if d1 <= d2 && d1 >= d3 && compare i (to_bin ts) >= 0 then
+    | (_, d1) :: _, (_, One (d2, t)) :: ((_, One (_, _)) :: _ as ts) ->
+        if d1 <= d2 && compare i (to_bin ts) >= 0 then
           let tail = to_bin ts in
           lookup_tree_bin (sub_composed i tail) t
         else (
-          assert (d1 < d3 || compare i (to_bin ts) < 0);
+          assert (compare i (to_bin ts) < 0);
           aux i ts)
-    | (c, d1) :: _, (_, One (d2, t)) :: ((_, Two (d3, _, _)) :: _ as ts) ->
-        if d1 <= d2 && if c = O then d1 > d3 else d1 >= d3 then
+    | (c, d1) :: _, (_, One (d2, t)) :: ((_, Two (d3, _, _)) :: [] as ts) ->
+        if d1 <= d2 && if c = O then d1 > d3 else d1 >= d3 then (
+          assert (compare i (to_bin ts) >= 0);
+          (* car forme canonique donc 2 suivi par [] *)
           let tail = to_bin ts in
-          lookup_tree_bin (sub_composed i tail) t
+          lookup_tree_bin (sub_composed i tail) t)
         else (
           assert (if c = O then d1 <= d3 else d1 < d3);
           aux i ts)
