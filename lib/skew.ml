@@ -358,21 +358,22 @@ let lookup_bin (i : skew) (st : 'a skew_tree) =
     | (w, Two (d, t1, t2)) :: ts ->
         (w, Two (d + acc, t1, t2)) :: compose_ral (d + acc + 1) ts
   in
+  let minus_one_msb = function
+    | [] -> assert false
+    | (O, _) :: tl -> tl
+    | (T, d) :: tl -> (O, d) :: tl
+  in
   let rec aux i st =
     match (i, st) with
     | [], (_, One (_, t)) :: [] -> lookup_tree_bin i t
     | [], (_, Two (_, _, t)) :: [] -> lookup_tree_bin i t
     | (_, _) :: _, (_, One (_, t)) :: [] -> lookup_tree_bin i t
     | (_, d1) :: _, (_, Two (d2, t1, t2)) :: [] ->
-        let uncomposed_i = uncompose_bin i in
-        if d1 = d2 then
-          lookup_tree_bin
-            (List.rev
-               (compose_bin (sub uncomposed_i (skew_from_int (card t1)))))
-            t1
-        else lookup_tree_bin i t2
-    | [], (_, One (_, _)) :: (w, One (d3, t2)) :: ts2 ->
-        aux [] ((w, One (d3, t2)) :: ts2)
+        if d1 = d2 then lookup_tree_bin (minus_one_msb i) t1
+        else (
+          assert (d1 < d2);
+          lookup_tree_bin i t2)
+    | [], (_, One (_, _)) :: ts2 -> aux [] ts2
     | (_, d1) :: _, (_, One (d2, t)) :: (w, One (d3, t2)) :: ts2 ->
         if d1 <= d2 && d1 >= d3 then
           if compare i (to_bin ((w, One (d3, t2)) :: ts2)) >= 0 then
@@ -380,8 +381,6 @@ let lookup_bin (i : skew) (st : 'a skew_tree) =
             lookup_tree_bin (sub_composed i ts) t
           else aux i ((w, One (d3, t2)) :: ts2)
         else aux i ((w, One (d3, t2)) :: ts2)
-    | [], (_, One (_, _)) :: (w, Two (d3, t2, t3)) :: ts2 ->
-        aux [] ((w, Two (d3, t2, t3)) :: ts2)
     | (c, d1) :: _, (_, One (d2, t)) :: (w, Two (d3, t2, t3)) :: ts2 ->
         if d1 <= d2 && if c = O then d1 > d3 else d1 >= d3 then
           let ts = to_bin ((w, Two (d3, t2, t3)) :: ts2) in
