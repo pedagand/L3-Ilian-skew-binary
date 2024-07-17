@@ -378,12 +378,16 @@ let lookup_bin (i : skew) (st : 'a skew_tree) =
         if d1 <= d2 && d1 >= d3 && compare i (to_bin ts) >= 0 then
           let tail = to_bin ts in
           lookup_tree_bin (sub_composed i tail) t
-        else aux i ts
+        else (
+          assert (d1 < d3 || compare i (to_bin ts) < 0);
+          aux i ts)
     | (c, d1) :: _, (_, One (d2, t)) :: ((_, Two (d3, _, _)) :: _ as ts) ->
         if d1 <= d2 && if c = O then d1 > d3 else d1 >= d3 then
           let tail = to_bin ts in
           lookup_tree_bin (sub_composed i tail) t
-        else aux i ts
+        else (
+          assert (if c = O then d1 <= d3 else d1 < d3);
+          aux i ts)
     | _ -> assert false
   in
   assert (is_well_formed st && is_canonical i);
