@@ -375,11 +375,12 @@ let lookup_bin (i : skew) (st : 'a skew_tree) =
           lookup_tree_bin i t2)
     | [], (_, One (_, _)) :: ts2 -> aux [] ts2
     | (_, d1) :: _, (_, One (d2, t)) :: (w, One (d3, t2)) :: ts2 ->
-        if d1 <= d2 && d1 >= d3 then
-          if compare i (to_bin ((w, One (d3, t2)) :: ts2)) >= 0 then
-            let ts = to_bin ((w, One (d3, t2)) :: ts2) in
-            lookup_tree_bin (sub_composed i ts) t
-          else aux i ((w, One (d3, t2)) :: ts2)
+        if
+          d1 <= d2 && d1 >= d3
+          && compare i (to_bin ((w, One (d3, t2)) :: ts2)) >= 0
+        then
+          let ts = to_bin ((w, One (d3, t2)) :: ts2) in
+          lookup_tree_bin (sub_composed i ts) t
         else aux i ((w, One (d3, t2)) :: ts2)
     | (c, d1) :: _, (_, One (d2, t)) :: (w, Two (d3, t2, t3)) :: ts2 ->
         if d1 <= d2 && if c = O then d1 > d3 else d1 >= d3 then
